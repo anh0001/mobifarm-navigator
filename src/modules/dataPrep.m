@@ -49,16 +49,16 @@ function data = preprocessData(folderPath)
         data.images = [data.images; images];
 
         % Load Labels
-        labelFiles = dir(fullfile(currentFolder, 'labels', '*.mat'));
+        labelFiles = dir(fullfile(currentFolder, 'labels', '*.txt'));
         labels = cell(1, numel(labelFiles));
         for j = 1:numel(labelFiles)
-            temp = load(fullfile(labelFiles(j).folder, labelFiles(j).name));
-            labels{j} = temp.label; % Assuming 'label' is the variable name in the .mat file
+            % Read label data from text file, each row contains a linear and angular velocity
+            labels{j} = readmatrix(fullfile(labelFiles(j).folder, labelFiles(j).name));
         end
         data.labels = [data.labels; labels];
 
         % Load Processed Point Cloud Data
-        pcdFiles = dir(fullfile(currentFolder, 'pcd_preprocessed', '*.mat'));
+        pcdFiles = dir(fullfile(currentFolder, 'pcd_preprocessed', '*.npy'));
         pointClouds = cell(1, numel(pcdFiles));
         for j = 1:numel(pcdFiles)
             temp = load(fullfile(pcdFiles(j).folder, pcdFiles(j).name));
