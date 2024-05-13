@@ -1,0 +1,16 @@
+# Write Folder Structure of the data folder
+- data
+  - raw
+  - processed
+    - train
+        - data_[name, version, number]
+            - cam_front
+            - labels
+            - pcd_preprocessed
+            - realtime_map
+    - val
+        - data_[name, version, number]
+            - cam_front
+            - labels
+            - pcd_preprocessed
+            - realtime_map
