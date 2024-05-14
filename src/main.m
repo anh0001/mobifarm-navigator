@@ -27,16 +27,13 @@ dataTest = dataVal;
 %% Model Building
 % Build and compile the deep learning model
 disp('Building the model...');
-% run modelBuild.m and get the result from the matlab workspace
-
-
 model = modelBuild();
 
-% %% Model Training
-% % Train the model with the training data
-% disp('Training the model...');
-% [model, trainInfo] = trainModel(model, dataTrain, dataVal);
-% 
+%% Model Training
+% Train the model with the training data
+disp('Training the model...');
+[model, trainInfo] = trainModel(model, dataTrain, dataVal);
+
 % %% Model Evaluation
 % % Evaluate the model on the test data
 % disp('Evaluating the model...');
