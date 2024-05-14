@@ -46,7 +46,18 @@ function data = preprocessData(folderPath)
         for j = 1:numel(imgFiles)
             images{j} = imread(fullfile(imgFiles(j).folder, imgFiles(j).name));
         end
-        data.images = [data.images; images];
+
+        % Ensure that 'images' is a column vector
+        images = images(:);
+
+        % Concatenate 'images' to 'data.images'
+        if isempty(data.images)
+            data.images = images;
+        else
+            % Ensure that 'data.images' and 'images' have the same size in the second dimension
+            assert(size(data.images, 2) == size(images, 2), 'Size mismatch between ''data.images'' and ''images''');
+            data.images = [data.images; images];
+        end
 
         % Load Labels
         labelFiles = dir(fullfile(currentFolder, 'labels', '*.txt'));
@@ -55,24 +66,57 @@ function data = preprocessData(folderPath)
             % Read label data from text file, each row contains a linear and angular velocity
             labels{j} = readmatrix(fullfile(labelFiles(j).folder, labelFiles(j).name));
         end
-        data.labels = [data.labels; labels];
+
+        % Ensure that 'labels' is a column vector
+        labels = labels(:);
+
+        % Concatenate 'labels' to 'data.labels'
+        if isempty(data.labels)
+            data.labels = labels;
+        else
+            % Ensure that 'data.labels' and 'labels' have the same size in the second dimension
+            assert(size(data.labels, 2) == size(labels, 2), 'Size mismatch between ''data.labels'' and ''labels''');
+            data.labels = [data.labels; labels];
+        end
 
         % Load Processed Point Cloud Data
         pcdFiles = dir(fullfile(currentFolder, 'pcd_preprocessed', '*.npy'));
         pointClouds = cell(1, numel(pcdFiles));
         for j = 1:numel(pcdFiles)
-            temp = load(fullfile(pcdFiles(j).folder, pcdFiles(j).name));
-            pointClouds{j} = temp.pcd; % Assuming 'pcd' is the variable name in the .mat file
+            % Read point cloud data from .npy file
+            pointClouds{j} = readNPY(fullfile(pcdFiles(j).folder, pcdFiles(j).name));
         end
-        data.pointClouds = [data.pointClouds; pointClouds];
+
+        % Ensure that 'pointClouds' is a column vector
+        pointClouds = pointClouds(:);
+
+        % Concatenate 'pointClouds' to 'data.pointClouds'
+        if isempty(data.pointClouds)
+            data.pointClouds = pointClouds;
+        else
+            % Ensure that 'data.pointClouds' and 'pointClouds' have the same size in the second dimension
+            assert(size(data.pointClouds, 2) == size(pointClouds, 2), 'Size mismatch between ''data.pointClouds'' and ''pointClouds''');
+            data.pointClouds = [data.pointClouds; pointClouds];
+        end
 
         % Load Real-time Maps
-        mapFiles = dir(fullfile(currentFolder, 'realtime_map', '*.mat'));
+        mapFiles = dir(fullfile(currentFolder, 'realtime_map', '*.jpg'));
         maps = cell(1, numel(mapFiles));
         for j = 1:numel(mapFiles)
-            temp = load(fullfile(mapFiles(j).folder, mapFiles(j).name));
-            maps{j} = temp.map; % Assuming 'map' is the variable name in the .mat file
+            % Load map data from .jpg file
+            maps{j} = imread(fullfile(mapFiles(j).folder, mapFiles(j).name));
         end
-        data.maps = [data.maps; maps];
+
+        % Ensure that 'maps' is a column vector
+        maps = maps(:);
+
+        % Concatenate 'maps' to 'data.maps'
+        if isempty(data.maps)
+            data.maps = maps;
+        else
+            % Ensure that 'data.maps' and 'maps' have the same size in the second dimension
+            assert(size(data.maps, 2) == size(maps, 2), 'Size mismatch between ''data.maps'' and ''maps''');
+            data.maps = [data.maps; maps];
+        end
     end
 end

@@ -33,6 +33,7 @@
 *.mexsol
 *.mexmac
 *.mat
+*.mlx
 
 # Compiled files
 # These are files that contain compiled code, and are not needed for your code

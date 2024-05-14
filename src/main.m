@@ -24,11 +24,11 @@ disp('Loading and preprocessing data...');
 [dataTrain, dataVal] = dataPrep();
 dataTest = dataVal;
 
-% %% Model Building
-% % Build and compile the deep learning model
-% disp('Building the model...');
-% model = modelBuild();
-% 
+%% Model Building
+% Build and compile the deep learning model
+disp('Building the model...');
+model = modelBuild();
+
 % %% Model Training
 % % Train the model with the training data
 % disp('Training the model...');
