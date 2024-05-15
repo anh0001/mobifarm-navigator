@@ -3,9 +3,9 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
     % This function configures and conducts the training of the deep learning
     % model for mobile robot navigation using multiple sensors' data.
     % It returns the trained model and training information.
-    
-    disp('Configuring training options...');
 
+    disp('Configuring training options...');
+    
     %% Configure Training Options
     options = trainingOptions('adam', ...
         'InitialLearnRate', 1e-4, ...
@@ -23,5 +23,4 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
     [trainedModel, trainInfo] = trainNetwork(dataTrain, model, options);
     
     disp('Model training complete.');
-
 end
