@@ -29,6 +29,16 @@ dataTest = dataVal;
 disp('Building the model...');
 model = modelBuild();
 
+% Define the layers you want to train (e.g., the last three layers)
+layersToTrain = {'conv1', 'conv1_1', 'conv', 'conv_1', 'conv_2', ...
+    'batchnorm', 'batchnorm_1', 'batchnorm_2', 'fc', 'fc_1', 'fc_2'};
+
+% Freeze all layers first by setting their learning rate multipliers to 0
+model = modifyLearningRates(model, {model.Layers.Name}, 0);
+
+% Now set the learning rate multipliers for the last few layers to 1 (or another value to train)
+model = modifyLearningRates(model, layersToTrain, 1);
+
 %% Model Training
 % Train the model with the training data
 disp('Training the model...');

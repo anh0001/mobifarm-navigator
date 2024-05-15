@@ -407,6 +407,8 @@ net = connectLayers(net,"fire9-relu_expand3x3_1","fire9-concat_1/in2");
 net = connectLayers(net,"prob_flatten_1","depthcat/in2");
 net = connectLayers(net,"prob_flatten_1_1","depthcat/in3");
 net = initialize(net);
+
+model = net;
 %% Plot Layers
 
 plot(net);
