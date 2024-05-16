@@ -44,7 +44,7 @@ function combineDS = preprocessData(folderPath)
     lidarDS = imageDatastore(lidarFiles, 'FileExtensions', {'.jpg'}, 'ReadFcn', @readImage);
 
     % Load Processed Point Cloud Data using fileDatastore
-    pcdDS = fileDatastore(pcdFiles, 'ReadFcn', @readNPY, 'FileExtensions', {'.npy'});
+    pcdDS = fileDatastore(pcdFiles, 'ReadFcn', @bacaNPY, 'FileExtensions', {'.npy'});
 
     % Load Labels into an array
     labelData = cellfun(@readmatrix, labelFiles, 'UniformOutput', false);
@@ -54,28 +54,8 @@ function combineDS = preprocessData(folderPath)
     labelsDS = arrayDatastore(labelDataMatrix, 'IterationDimension', 1);
 
     % Combine the datastores into a single datastore
-    combineDS = combine(imgDS, lidarDS, pcdDS, labelsDS);
-
-
-
-    % Test reading a few entries from each datastore
-    disp('Testing individual datastores...');
-    imgSample = read(imgDS);
-    lidarSample = read(lidarDS);
-    pcdSample = read(pcdDS);
-    labelSample = read(labelDS);
-
-    disp('Image sample:');
-    disp(size(imgSample));
-
-    disp('Label sample:');
-    disp(labelSample);
-
-    disp('Point Cloud sample:');
-    disp(size(pcdSample));
-
-    disp('LiDAR sample:');
-    disp(size(lidarSample));    
+    %
+    combineDS = combine(imgDS, lidarDS, pcdDS, labelsDS);    
 end
 
 function files = findFilesRecursively(folderPath, pattern)
@@ -88,7 +68,12 @@ function data = readImage(filename)
     data = imread(filename);
 end
 
-function data = readNPY(filename)
+function data = bacaNPY(filename)
     % Custom read function for fileDatastore to load .npy files
     data = readNPY(filename); % Assuming you have a readNPY function available
+
+    % Check if data is empty
+    if isempty(data)
+        error('Data is empty. Please ensure the fileDatastore is correctly loaded with data.')
+    end
 end
