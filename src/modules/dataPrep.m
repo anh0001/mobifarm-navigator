@@ -18,10 +18,9 @@ function [dataTrain, dataVal] = dataPrep()
     dataVal = preprocessData(valDir);
 
     disp('Data preparation completed.');
-
 end
 
-function combinedDS = preprocessData(folderPath)
+function combineDS = preprocessData(folderPath)
     % This function processes data from a specific folder, performing operations
     % such as loading images, labels, point cloud data, and maps.
     disp(['Processing data in: ', folderPath]);
@@ -41,17 +40,42 @@ function combinedDS = preprocessData(folderPath)
     % Load Camera Images using imageDatastore
     imgDS = imageDatastore(imgFiles, 'FileExtensions', {'.jpg'}, 'ReadFcn', @readImage);
 
-    % Load Labels using fileDatastore
-    labelDS = fileDatastore(labelFiles, 'ReadFcn', @readmatrix, 'FileExtensions', {'.txt'});
+    % Load Real-time Maps using imageDatastore
+    lidarDS = imageDatastore(lidarFiles, 'FileExtensions', {'.jpg'}, 'ReadFcn', @readImage);
 
     % Load Processed Point Cloud Data using fileDatastore
     pcdDS = fileDatastore(pcdFiles, 'ReadFcn', @readNPY, 'FileExtensions', {'.npy'});
 
-    % Load Real-time Maps using imageDatastore
-    lidarDS = imageDatastore(lidarFiles, 'FileExtensions', {'.jpg'}, 'ReadFcn', @readImage);
+    % Load Labels into an array
+    labelData = cellfun(@readmatrix, labelFiles, 'UniformOutput', false);
+    % Convert cell array to a 2-column matrix
+    labelDataMatrix = vertcat(labelData{:});
+    % Create an arrayDatastore for linear and angular velocities
+    labelsDS = arrayDatastore(labelDataMatrix, 'IterationDimension', 1);
 
     % Combine the datastores into a single datastore
-    combinedDS = combine(imgDS, lidarDS, pcdDS, labelDS);
+    combineDS = combine(imgDS, lidarDS, pcdDS, labelsDS);
+
+
+
+    % Test reading a few entries from each datastore
+    disp('Testing individual datastores...');
+    imgSample = read(imgDS);
+    lidarSample = read(lidarDS);
+    pcdSample = read(pcdDS);
+    labelSample = read(labelDS);
+
+    disp('Image sample:');
+    disp(size(imgSample));
+
+    disp('Label sample:');
+    disp(labelSample);
+
+    disp('Point Cloud sample:');
+    disp(size(pcdSample));
+
+    disp('LiDAR sample:');
+    disp(size(lidarSample));    
 end
 
 function files = findFilesRecursively(folderPath, pattern)

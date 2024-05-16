@@ -330,8 +330,7 @@ tempNet = [
     fullyConnectedLayer(256,"Name","fc","WeightsInitializer","narrow-normal")
     reluLayer("Name","relu")
     dropoutLayer(0.5,"Name","dropout")
-    fullyConnectedLayer(2,"Name","fc_1","WeightsInitializer","narrow-normal")
-    softmaxLayer("Name","softmax")];
+    fullyConnectedLayer(2,"Name","fc_1","WeightsInitializer","narrow-normal")];
 net = addLayers(net,tempNet);
 
 % clean up helper variable
