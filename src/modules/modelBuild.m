@@ -410,5 +410,5 @@ net = initialize(net);
 model = net;
 %% Plot Layers
 
-plot(net);
+% plot(net);
 end
