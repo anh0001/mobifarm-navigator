@@ -76,3 +76,4 @@
 # Temporary files
 # These are files that MATLAB creates temporarily. They are not needed for your
 # code to run, and can be ignored.
+.DS_Store

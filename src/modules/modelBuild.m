@@ -165,7 +165,7 @@ tempNet = [
     convolution2dLayer([1 1],1000,"Name","conv10","Bias",params.conv10.Bias,"Weights",params.conv10.Weights)
     reluLayer("Name","relu_conv10")
     globalAveragePooling2dLayer("Name","pool10")
-    flattenLayer("Name","prob_flatten")];
+    flattenLayer("Name","img_flatten")];
 net = addLayers(net,tempNet);
 
 tempNet = [
@@ -307,34 +307,34 @@ tempNet = [
     convolution2dLayer([1 1],1000,"Name","conv10_1","Bias",params.conv10_1.Bias,"Weights",params.conv10_1.Weights)
     reluLayer("Name","relu_conv10_1")
     globalAveragePooling2dLayer("Name","pool10_1")
-    flattenLayer("Name","prob_flatten_1")];
+    flattenLayer("Name","lidar_flatten")];
+net = addLayers(net,tempNet);
+
+numPoints = 61440;
+tempNet = [
+    imageInputLayer([numPoints 3 1], 'Name', 'pc_input', 'Normalization', 'none')
+    TNetLayer(numPoints, 3, 'pc_tnet1')
+    FeatureTransformLayer(numPoints, 'pc_featureTransform')
+    fullyConnectedLayer(512, 'Name', 'pc_fc1')
+    reluLayer('Name', 'pc_relu1')
+    dropoutLayer(0.3, 'Name', 'pc_dropout1')
+    fullyConnectedLayer(256, 'Name', 'pc_fc2')
+    reluLayer('Name', 'pc_relu2')
+    dropoutLayer(0.3, 'Name', 'pc_dropout2')
+    flattenLayer("Name","pc_flatten")];
 net = addLayers(net,tempNet);
 
 tempNet = [
-    imageInputLayer([61440 3 1],"Name","pc_input")
-    convolution2dLayer([1 3],64,"Name","conv","Padding","same","WeightsInitializer","narrow-normal")
-    batchNormalizationLayer("Name","batchnorm")
-    reluLayer("Name","relu_1")
-    convolution2dLayer([1 1],128,"Name","conv_1","Padding","same","WeightsInitializer","narrow-normal")
-    batchNormalizationLayer("Name","batchnorm_1")
-    reluLayer("Name","relu_2")
-    convolution2dLayer([1 1],256,"Name","conv_2","Padding","same","WeightsInitializer","narrow-normal")
-    batchNormalizationLayer("Name","batchnorm_2")
-    reluLayer("Name","relu_3")
-    globalAveragePooling2dLayer("Name","gapool")
-    flattenLayer("Name","prob_flatten_1_1")];
-net = addLayers(net,tempNet);
-
-tempNet = [
-    depthConcatenationLayer(3,"Name","depthcat")
-    fullyConnectedLayer(256,"Name","fc","WeightsInitializer","narrow-normal")
-    reluLayer("Name","relu")
-    dropoutLayer(0.5,"Name","dropout")
-    fullyConnectedLayer(2,"Name","fc_1","WeightsInitializer","narrow-normal")];
+    depthConcatenationLayer(3,"Name","combine_depthcat")
+    fullyConnectedLayer(256,"Name","combine_fc1","WeightsInitializer","narrow-normal")
+    reluLayer("Name","combine_relu")
+    dropoutLayer(0.5,"Name","combine_dropout")
+    fullyConnectedLayer(2,"Name","combine_fc2","WeightsInitializer","narrow-normal")];
 net = addLayers(net,tempNet);
 
 % clean up helper variable
 clear tempNet;
+
 %% Connect Layer Branches
 % Connect all the branches of the network to create the network graph.
 
@@ -370,7 +370,7 @@ net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand1x1");
 net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand3x3");
 net = connectLayers(net,"fire9-relu_expand1x1","fire9-concat/in1");
 net = connectLayers(net,"fire9-relu_expand3x3","fire9-concat/in2");
-net = connectLayers(net,"prob_flatten","depthcat/in1");
+net = connectLayers(net,"img_flatten","combine_depthcat/in1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand1x1_1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand3x3_1");
 net = connectLayers(net,"fire2-relu_expand1x1_1","fire2-concat_1/in1");
@@ -403,12 +403,11 @@ net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand1x1_1");
 net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand3x3_1");
 net = connectLayers(net,"fire9-relu_expand1x1_1","fire9-concat_1/in1");
 net = connectLayers(net,"fire9-relu_expand3x3_1","fire9-concat_1/in2");
-net = connectLayers(net,"prob_flatten_1","depthcat/in2");
-net = connectLayers(net,"prob_flatten_1_1","depthcat/in3");
-net = initialize(net);
+net = connectLayers(net,"lidar_flatten","combine_depthcat/in2");
+net = connectLayers(net,"pc_flatten","combine_depthcat/in3");
 
 model = net;
-%% Plot Layers
 
+%% Plot Layers
 % plot(net);
 end
