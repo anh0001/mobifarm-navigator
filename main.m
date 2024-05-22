@@ -29,6 +29,10 @@ dataTest = dataVal;
 disp('Building the model...');
 model = modelBuild();
 
+% Analyze the network
+disp('Analyzing the network...');
+analyzeNetwork(model);
+
 % Define the layers you want to train (e.g., the last three layers)
 layersToTrain = {'conv1', 'conv1_1', 'conv', 'conv_1', 'conv_2', ...
     'batchnorm', 'batchnorm_1', 'batchnorm_2', 'fc', 'fc_1', 'fc_2'};

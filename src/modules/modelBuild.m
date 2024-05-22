@@ -312,15 +312,8 @@ net = addLayers(net,tempNet);
 
 numPoints = 61440;
 tempNet = [
-    imageInputLayer([numPoints 3 1], 'Name', 'pc_input', 'Normalization', 'none')
-    TNetLayer(numPoints, 3, 'pc_tnet1')
-    FeatureTransformLayer(numPoints, 'pc_featureTransform')
-    fullyConnectedLayer(512, 'Name', 'pc_fc1')
-    reluLayer('Name', 'pc_relu1')
-    dropoutLayer(0.3, 'Name', 'pc_dropout1')
-    fullyConnectedLayer(256, 'Name', 'pc_fc2')
-    reluLayer('Name', 'pc_relu2')
-    dropoutLayer(0.3, 'Name', 'pc_dropout2')
+    pointCloudInputLayer([numPoints 3], 'Name', 'pc_input', 'Normalization', 'none');
+    PointNetLayer(3, [64 64], 64, [128 1024], 'Name', 'pc_pointnet')
     flattenLayer("Name","pc_flatten")];
 net = addLayers(net,tempNet);
 
