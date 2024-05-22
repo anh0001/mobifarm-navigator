@@ -10,14 +10,12 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
     
     properties (Learnable)
         % PointNet encoder learnable parameters
-        InputTransformWeights
-        InputTransformBias
-        SharedMLP1Weights
-        SharedMLP1Bias
-        FeatureTransformWeights
-        FeatureTransformBias
-        SharedMLP2Weights
-        SharedMLP2Bias
+        InputTransformNetwork
+        InputTransformPredictionNetwork
+        SharedMLP1Network
+        FeatureTransformNetwork
+        FeatureTransformPredictionNetwork
+        SharedMLP2Network
     end
     
     methods
@@ -34,26 +32,21 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             parse(p, varargin{:});
             layer.Name = p.Results.Name;
 
-            % Initialize PointNet encoder learnable parameters
-            [layer.InputTransformWeights, layer.InputTransformBias] = layer.InitializeMLPParameters([3, layer.InputTransformSize, layer.InputTransformSize^2]);
-            [layer.SharedMLP1Weights, layer.SharedMLP1Bias] = layer.InitializeMLPParameters(layer.SharedMLP1Sizes);
-            layer.FeatureTransformWeights = randn(layer.SharedMLP1Sizes(end), layer.FeatureTransformSize, 'single'); % Adjusted dimensions
-            layer.FeatureTransformBias = zeros(1, layer.FeatureTransformSize, 'single');
-            [layer.SharedMLP2Weights, layer.SharedMLP2Bias] = layer.InitializeMLPParameters(layer.SharedMLP2Sizes);
-
-            % Convert cell arrays to numeric arrays for learnable properties
-            layer.SharedMLP1Weights = cell2mat(layer.SharedMLP1Weights);
-            layer.SharedMLP1Bias = cell2mat(layer.SharedMLP1Bias);
-            layer.SharedMLP2Weights = cell2mat(layer.SharedMLP2Weights);
-            layer.SharedMLP2Bias = cell2mat(layer.SharedMLP2Bias);
+            % Initialize PointNet encoder learnable parameters as dlnetwork objects
+            layer.InputTransformNetwork = layer.createTNet(inputTransformSize, 'pcInputTransform');
+            layer.InputTransformPredictionNetwork = layer.createTransformPredictionNetwork(inputTransformSize, 'pcInputTransformPrediction');
+            layer.SharedMLP1Network = layer.createMLPNetwork(sharedMLP1Sizes, 'SharedMLP1');
+            layer.FeatureTransformNetwork = layer.createTNet(featureTransformSize, 'pcFeatureTransform');
+            layer.FeatureTransformPredictionNetwork = layer.createTransformPredictionNetwork(featureTransformSize, 'pcFeatureTransformPrediction');
+            layer.SharedMLP2Network = layer.createMLPNetwork(sharedMLP2Sizes, 'pcSharedMLP2');
         end
         
         function Z = predict(layer, X)
             % PointNet encoder
-            Z = layer.PointNetEncoder(X, layer.InputTransformWeights, layer.InputTransformBias, ...
-                layer.SharedMLP1Weights, layer.SharedMLP1Bias, ...
-                layer.FeatureTransformWeights, layer.FeatureTransformBias, ...
-                layer.SharedMLP2Weights, layer.SharedMLP2Bias);
+            Z = layer.PointNetEncoder(X, layer.InputTransformNetwork, ...
+                layer.InputTransformPredictionNetwork, layer.SharedMLP1Network, ...
+                layer.FeatureTransformNetwork, layer.FeatureTransformPredictionNetwork, ...
+                layer.SharedMLP2Network);
             
             disp('Size of Z at output of predict:');
             disp(size(Z));
@@ -64,72 +57,99 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
     end
     
     methods (Access = private)
-        function [weights, bias] = InitializeMLPParameters(layer, sizes)
-            numLayers = numel(sizes) - 1;
-            weights = cell(1, numLayers);
-            bias = cell(1, numLayers);
-            for i = 1:numLayers
-                weights{i} = randn(sizes(i+1), sizes(i), 'single');
-                bias{i} = zeros(sizes(i+1), 1, 'single');
-            end
+        function dlnet = createTNet(~, size, prefix)
+            layers = [
+                featureInputLayer(size, 'Name', [prefix, '_input'])
+                fullyConnectedLayer(size, 'Name', [prefix, '_fc1'])
+                reluLayer('Name', [prefix, '_relu1'])
+                fullyConnectedLayer(size, 'Name', [prefix, '_fc2'])
+                reluLayer('Name', [prefix, '_relu2'])
+                fullyConnectedLayer(size, 'Name', [prefix, '_fc3'])
+                reluLayer('Name', [prefix, '_relu3'])
+            ];
+            lgraph = layerGraph(layers);
+            dlnet = dlnetwork(lgraph);
+        end
+
+        function dlnet = createTransformPredictionNetwork(~, size, prefix)
+            layers = [
+                featureInputLayer(size, 'Name', [prefix, '_input'])
+                fullyConnectedLayer(size, 'Name', [prefix, '_fc4'])
+                reluLayer('Name', [prefix, '_relu4'])
+                fullyConnectedLayer(size^2, 'Name', [prefix, '_fc5'])
+            ];
+            lgraph = layerGraph(layers);
+            dlnet = dlnetwork(lgraph);
         end
         
-        function X = PointNetEncoder(layer, X, inputTransformWeights, inputTransformBias, ...
-                                     sharedMLP1Weights, sharedMLP1Bias, ...
-                                     featureTransformWeights, featureTransformBias, ...
-                                     sharedMLP2Weights, sharedMLP2Bias)
-            
-            % Reshape the input to [numPoints, 3]
+        function dlnet = createMLPNetwork(~, sizes, prefix)
+            layers = [
+                featureInputLayer(sizes(1), 'Name', [prefix, '_input'])
+            ];
+            for i = 2:numel(sizes)
+                layers = [
+                    layers
+                    fullyConnectedLayer(sizes(i), 'Name', [prefix, '_fc', num2str(i-1)])
+                    reluLayer('Name', [prefix, '_relu', num2str(i-1)])
+                ];
+            end
+            lgraph = layerGraph(layers);
+            dlnet = dlnetwork(lgraph);
+        end
+        
+        function Z = PointNetEncoder(layer, X, inputTransformNet, inputTransformPredictionNet, sharedMLP1Net, featureTransformNet, featureTransformPredictionNet, sharedMLP2Net)
+            % Reshape the input to [3, numPoints, 1] for 'CB' format
             numPoints = size(X, 1);
-            X = reshape(X, numPoints, 3);  % Added reshaping of input data
+            X_permuted = permute(X, [2, 1, 3]);
             
             disp('Size of X at input to PointNetEncoder:');
-            disp(size(X));
+            disp(size(X_permuted));
             
             % Input transform (T-net)
-            T = layer.TNet(X, inputTransformWeights, inputTransformBias);
+            X_feature = layer.SharedMLP(X_permuted, inputTransformNet);
+            T = layer.PredictTransform(X_feature, inputTransformPredictionNet);
             X = X * T;
-                        
+            X_permuted = permute(X, [2, 1, 3]);
+            
             % Shared MLP 1
-            X = layer.SharedMLP(X, sharedMLP1Weights, sharedMLP1Bias);
+            X = layer.SharedMLP(X_permuted, sharedMLP1Net);
 
             % Feature transform (T-net)
-            T = layer.TNet(X, featureTransformWeights, featureTransformBias);
+            X_feature = layer.SharedMLP(X, featureTransformNet);
+            T = layer.PredictTransform(X_feature, featureTransformPredictionNet);
+            X = permute(X, [2, 1, 3]);
             X = X * T;
+            X_permuted = permute(X, [2, 1, 3]);
 
             % Shared MLP 2
-            X = layer.SharedMLP(X, sharedMLP2Weights, sharedMLP2Bias);
+            X = layer.SharedMLP(X_permuted, sharedMLP2Net);
 
             % Max pooling
-            X = max(X, [], 1);
+            X = max(X, [], 2);
             
             disp('Size of X after max pooling:');
             disp(size(X));
         end
         
-        function T = TNet(layer, X, weights, bias)
-            % Point-independent feature extraction
-            X = layer.SharedMLP(X, weights(1:2), bias(1:2));
+        function T = PredictTransform(~, X, transformPredictionNet)
+            % Symmetric function (max pooling)
+            X = max(X, [], 2);
 
-            % Max pooling layer
-            X = max(X, [], 1);
-
-            % Fully connected layers to predict affine transformation matrix
-            X = layer.SharedMLP(X, weights(3:end), bias(3:end));
-
-            % Reshape to form affine transformation matrix
-            T = reshape(X, sqrt(size(X, 2)), sqrt(size(X, 2)));
+            % Affine transformation matrix prediction
+            X = predict(transformPredictionNet, dlarray(X, 'CB'));
+            T = reshape(extractdata(X), [sqrt(size(X, 1)), sqrt(size(X, 1))]);
 
             disp('Affine transformation matrix T:');
             disp(T);
         end
 
-        function X = SharedMLP(layer, X, weights, bias)
-            for i = 1:numel(weights)
-                X = relu(X * weights{i} + bias{i}'); % Adjusted dimensions
-                disp(['Size of X after layer ', num2str(i), ' in shared MLP:']);
-                disp(size(X));
-            end
+        function X = SharedMLP(~, X, dlnet)
+            % No need to permute again here, as it is already in 'CB' format
+            X = predict(dlnet, dlarray(X, 'CB'));
+            X = extractdata(X);
+            
+            disp(['Size of X after shared MLP:']);
+            disp(size(X));
         end
     end
 end

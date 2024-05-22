@@ -313,7 +313,7 @@ net = addLayers(net,tempNet);
 numPoints = 61440;
 tempNet = [
     pointCloudInputLayer([numPoints 3], 'Name', 'pc_input', 'Normalization', 'none');
-    PointNetLayer(3, [64 64], 64, [128 1024], 'Name', 'pc_pointnet')
+    PointNetLayer(3, [3 64], 64, [64 1024], 'Name', 'pc_pointnet')
     flattenLayer("Name","pc_flatten")];
 net = addLayers(net,tempNet);
 
