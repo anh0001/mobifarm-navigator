@@ -25,22 +25,35 @@ disp('Loading and preprocessing data...');
 dataTest = dataVal;
 
 %% Model Building
-% Build and compile the deep learning model
-disp('Building the model...');
-model = modelBuild();
+% Check if there is a checkpoint to resume from
+checkpointDir = 'data/checkpoints';
+checkpointFiles = dir(fullfile(checkpointDir, '*.mat'));
 
-% Analyze the network
-disp('Analyzing the network...');
-analyzeNetwork(model);
+if ~isempty(checkpointFiles)
+    % Load the latest checkpoint
+    [~, idx] = max([checkpointFiles.datenum]);
+    latestCheckpoint = fullfile(checkpointFiles(idx).folder, checkpointFiles(idx).name);
+    disp(['Resuming from checkpoint: ', latestCheckpoint]);
+    load(latestCheckpoint, 'net', 'trainingOptions'); % Load the network and training options
+    model = net; % Rename loaded network to model for consistency
+else
+    % No checkpoint found, build the model from scratch
+    disp('Building the model...');
+    model = modelBuild();
 
-% Define the layers you want to train (e.g., the last three layers)
-layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'combine_fc1', 'combine_fc2'};
+    % Analyze the network
+    disp('Analyzing the network...');
+    analyzeNetwork(model);
 
-% Freeze all layers first by setting their learning rate multipliers to 0
-model = modifyLearningRates(model, {model.Layers.Name}, 0);
+    % Define the layers you want to train (e.g., the last three layers)
+    layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'combine_fc1', 'combine_fc2'};
 
-% Now set the learning rate multipliers for the last few layers to 1 (or another value to train)
-model = modifyLearningRates(model, layersToTrain, 1);
+    % Freeze all layers first by setting their learning rate multipliers to 0
+    model = modifyLearningRates(model, {model.Layers.Name}, 0);
+
+    % Now set the learning rate multipliers for the last few layers to 1 (or another value to train)
+    model = modifyLearningRates(model, layersToTrain, 1);
+end
 
 %% Model Training
 % Train the model with the training data

@@ -16,11 +16,28 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
         'ValidationFrequency', 30, ...
         'Verbose', true, ...
         'Plots', 'training-progress', ...
-        'ExecutionEnvironment', 'auto');
+        'ExecutionEnvironment', 'auto', ...
+        'CheckpointPath', 'data/checkpoints', ...
+        'OutputFcn', @(info)stopIfAccuracyNotImproving(info,20));  % custom function
 
     %% Train the Model
     disp('Starting model training...');
     [trainedModel, trainInfo] = trainnet(dataTrain, model, 'mse', options);
 
     disp('Model training complete.');
+end
+
+function stop = stopIfAccuracyNotImproving(info, N)
+    stop = false;
+    if strcmp(info.State, 'done')
+        return;
+    end
+    % Ensure ValidationLoss is a vector and has enough entries
+    if isfield(info, 'ValidationLoss') && numel(info.ValidationLoss) >= N
+        % Check if the most recent ValidationLoss values have improved
+        if info.Epoch > N && any(info.ValidationLoss(end-N:end) > min(info.ValidationLoss(1:end-N)))
+            stop = true;
+            disp('Stopping early due to no improvement in validation loss.');
+        end
+    end
 end
