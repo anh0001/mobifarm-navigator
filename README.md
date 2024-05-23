@@ -23,7 +23,7 @@ git clone https://github.com/yourusername/your-project-name.git
 1. Navigate to the project directory.
 2. Run the `main.m` script in MATLAB:
 ```matlab
-run('src/main.m');
+run main.m;
 ```
 
 ## Project Structure
