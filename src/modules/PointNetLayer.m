@@ -95,8 +95,10 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function Z = PointNetEncoder(layer, X, inputTransformNet, inputTransformPredictionNet, sharedMLP1Net, featureTransformNet, featureTransformPredictionNet, sharedMLP2Net)
+            % Input is point clouds SCB format
+            % where C is 3 for 3D points, S is the number of points, and B is the batch size
+
             % Reshape the input to [3, numPoints, 1] for 'CB' format
-            numPoints = size(X, 1);
             X_permuted = permute(X, [2, 1, 3]);
             
             % disp('Size of X at input to PointNetEncoder:');
@@ -127,7 +129,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             % disp('Size of X after max pooling:');
             % disp(size(X));
 
-            % Reshape the output to match the expected format [1, 1, featureSize]
+            % Reshape the output to match the expected format SxC
             if size(X, 1) ~= 1 || size(X, 2) ~= 1
                 X = reshape(X, [1, numel(X)]);
             end
