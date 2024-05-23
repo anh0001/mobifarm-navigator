@@ -50,9 +50,6 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             
             disp('Size of Z at output of predict:');
             disp(size(Z));
-            
-            % Reshape the output to match the expected format [1, 1, featureSize]
-            Z = reshape(Z, [1, 1, size(Z, 2)]);
         end
     end
     
@@ -102,8 +99,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             numPoints = size(X, 1);
             X_permuted = permute(X, [2, 1, 3]);
             
-            disp('Size of X at input to PointNetEncoder:');
-            disp(size(X_permuted));
+            % disp('Size of X at input to PointNetEncoder:');
+            % disp(size(X_permuted));
             
             % Input transform (T-net)
             X_feature = layer.SharedMLP(X_permuted, inputTransformNet);
@@ -127,8 +124,19 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             % Max pooling
             X = max(X, [], 2);
             
-            disp('Size of X after max pooling:');
-            disp(size(X));
+            % disp('Size of X after max pooling:');
+            % disp(size(X));
+
+            % Reshape the output to match the expected format [1, 1, featureSize]
+            if size(X, 1) ~= 1 || size(X, 2) ~= 1
+                X = reshape(X, [1, 1, numel(X)]);
+            end
+            
+            % Convert Z to a dlarray before returning
+            X = dlarray(X);
+
+            % Assign the final output to Z
+            Z = X;
         end
         
         function T = PredictTransform(~, X, transformPredictionNet)
@@ -139,8 +147,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             X = predict(transformPredictionNet, dlarray(X, 'CB'));
             T = reshape(extractdata(X), [sqrt(size(X, 1)), sqrt(size(X, 1))]);
 
-            disp('Affine transformation matrix T:');
-            disp(T);
+            % disp('Affine transformation matrix T:');
+            % disp(T);
         end
 
         function X = SharedMLP(~, X, dlnet)
@@ -148,8 +156,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             X = predict(dlnet, dlarray(X, 'CB'));
             X = extractdata(X);
             
-            disp(['Size of X after shared MLP:']);
-            disp(size(X));
+            % disp(['Size of X after shared MLP:']);
+            % disp(size(X));
         end
     end
 end
