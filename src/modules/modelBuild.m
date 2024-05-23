@@ -314,6 +314,7 @@ numPoints = 61440;
 tempNet = [
     pointCloudInputLayer([numPoints 3], 'Name', 'pc_input', 'Normalization', 'none');
     PointNetLayer(3, [3 64], 64, [64 1024], 'Name', 'pc_pointnet')
+    % DebugLayer('pcPointNet_debug');
     flattenLayer("Name","pc_flatten")];
 net = addLayers(net,tempNet);
 
@@ -363,7 +364,6 @@ net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand1x1");
 net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand3x3");
 net = connectLayers(net,"fire9-relu_expand1x1","fire9-concat/in1");
 net = connectLayers(net,"fire9-relu_expand3x3","fire9-concat/in2");
-net = connectLayers(net,"img_flatten","combine_depthcat/in1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand1x1_1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand3x3_1");
 net = connectLayers(net,"fire2-relu_expand1x1_1","fire2-concat_1/in1");
@@ -396,9 +396,31 @@ net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand1x1_1");
 net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand3x3_1");
 net = connectLayers(net,"fire9-relu_expand1x1_1","fire9-concat_1/in1");
 net = connectLayers(net,"fire9-relu_expand3x3_1","fire9-concat_1/in2");
+
+net = connectLayers(net,"img_flatten","combine_depthcat/in1");
 net = connectLayers(net,"lidar_flatten","combine_depthcat/in2");
 net = connectLayers(net,"pc_flatten","combine_depthcat/in3");
 
+% %% For debugging
+% % Add debug layers before concatenation
+% debugLayerImg = DebugLayer('img_debug');
+% debugLayerLidar = DebugLayer('lidar_debug');
+% debugLayerPC = DebugLayer('pc_debug');
+
+% % Add debug layers to the network
+% net = addLayers(net, debugLayerImg);
+% net = addLayers(net, debugLayerLidar);
+% net = addLayers(net, debugLayerPC);
+
+% % Connect debug layers before concatenation
+% net = connectLayers(net, "img_flatten", "img_debug");
+% net = connectLayers(net, "img_debug", "combine_depthcat/in1");
+% net = connectLayers(net, "lidar_flatten", "lidar_debug");
+% net = connectLayers(net, "lidar_debug", "combine_depthcat/in2");
+% net = connectLayers(net, "pc_flatten", "pc_debug");
+% net = connectLayers(net, "pc_debug", "combine_depthcat/in3");
+
+%% Clean up
 model = net;
 
 %% Plot Layers

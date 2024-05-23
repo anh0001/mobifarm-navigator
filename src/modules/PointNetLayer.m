@@ -48,8 +48,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
                 layer.FeatureTransformNetwork, layer.FeatureTransformPredictionNetwork, ...
                 layer.SharedMLP2Network);
             
-            disp('Size of Z at output of predict:');
-            disp(size(Z));
+            % disp('Size of Z at output of predict:');
+            % disp(size(Z));
         end
     end
     
@@ -108,7 +108,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
             numChannels = 3;
             batchSize = size(X, 3);
             outputSize = size(sharedMLP2Net.Layers(end-1).Weights, 1);  % Assuming the last fully connected layer size
-            Z = zeros(outputSize, batchSize, 'like', X);
+            Z = zeros(1, outputSize, batchSize, 'like', X);
             
             for b = 1:batchSize
                 % Extract the batch
@@ -140,7 +140,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
                 X_maxpooled = max(X_mlp2, [], 2);  % Now [numChannels, 1]
         
                 % Store the result for the batch
-                Z(:, b) = reshape(X_maxpooled, [], 1);  % Flatten to [outputSize, 1]
+                Z(1, :, b) = reshape(X_maxpooled, [], 1);  % Flatten to [outputSize, 1]
             end
             
             % Convert Z to a dlarray before returning
