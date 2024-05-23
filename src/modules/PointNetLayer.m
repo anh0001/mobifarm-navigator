@@ -48,8 +48,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
                 layer.FeatureTransformNetwork, layer.FeatureTransformPredictionNetwork, ...
                 layer.SharedMLP2Network);
             
-            disp('Size of Z at output of predict:');
-            disp(size(Z));
+            % disp('Size of Z at output of predict:');
+            % disp(size(Z));
         end
     end
     
