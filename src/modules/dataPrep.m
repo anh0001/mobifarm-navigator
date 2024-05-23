@@ -6,16 +6,31 @@ function [dataTrain, dataVal] = dataPrep()
     disp('Starting data preparation...');
 
     %% Directories
-    rawDir = 'data/raw/';
     processedDir = 'data/processed/';
 
-    %% Load and Preprocess Training Data
-    trainDir = fullfile(processedDir, 'train');
-    dataTrain = preprocessData(trainDir);
+    %% Dataset Folders
+    datasets = {'data_cave'};
 
-    %% Load and Preprocess Validation Data
-    valDir = fullfile(processedDir, 'val');
-    dataVal = preprocessData(valDir);
+    %% Initialize cell arrays to collect datastores
+    trainDatastores = {};
+    valDatastores = {};
+
+    %% Load and Preprocess Data
+    for i = 1:length(datasets)
+        dataset = datasets{i};
+
+        % Load and Preprocess Training Data
+        trainDir = fullfile(processedDir, dataset, 'train');
+        trainDatastores{end+1} = preprocessData(trainDir); %#ok<*AGROW>
+
+        % Load and Preprocess Validation Data
+        valDir = fullfile(processedDir, dataset, 'val');
+        valDatastores{end+1} = preprocessData(valDir);
+    end
+
+    %% Combine all the datastores
+    dataTrain = combine(trainDatastores{:});
+    dataVal = combine(valDatastores{:});
 
     disp('Data preparation completed.');
 end
@@ -54,7 +69,6 @@ function combineDS = preprocessData(folderPath)
     labelsDS = arrayDatastore(labelDataMatrix, 'IterationDimension', 1);
 
     % Combine the datastores into a single datastore
-    %
     combineDS = combine(imgDS, lidarDS, pcdDS, labelsDS);    
 end
 

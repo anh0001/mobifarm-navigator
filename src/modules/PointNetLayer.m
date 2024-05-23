@@ -48,8 +48,8 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
                 layer.FeatureTransformNetwork, layer.FeatureTransformPredictionNetwork, ...
                 layer.SharedMLP2Network);
             
-            % disp('Size of Z at output of predict:');
-            % disp(size(Z));
+            disp('Size of Z at output of predict:');
+            disp(size(Z));
         end
     end
     
@@ -95,50 +95,56 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function Z = PointNetEncoder(layer, X, inputTransformNet, inputTransformPredictionNet, sharedMLP1Net, featureTransformNet, featureTransformPredictionNet, sharedMLP2Net)
-            % Input is point clouds SCB format
-            % where C is 3 for 3D points, S is the number of points, and B is the batch size
-
-            % Reshape the input to [3, numPoints, 1] for 'CB' format
-            X_permuted = permute(X, [2, 1, 3]);
+            % Input is point clouds with dimensions (S, C, B)
+            % where S is the number of points, C is 3 for 3D points, and B is the batch size
+        
+            % Ensure the input is in 'SCB' format
+            if size(X, 2) ~= 3
+                error('Input X must have dimensions [numPoints, 3, batchSize]');
+            end
+        
+            % Initialize output
+            numPoints = size(X, 1);
+            numChannels = 3;
+            batchSize = size(X, 3);
+            outputSize = size(sharedMLP2Net.Layers(end-1).Weights, 1);  % Assuming the last fully connected layer size
+            Z = zeros(outputSize, batchSize, 'like', X);
             
-            % disp('Size of X at input to PointNetEncoder:');
-            % disp(size(X_permuted));
-            
-            % Input transform (T-net)
-            X_feature = layer.SharedMLP(X_permuted, inputTransformNet);
-            T = layer.PredictTransform(X_feature, inputTransformPredictionNet);
-            X = X * T;
-            X_permuted = permute(X, [2, 1, 3]);
-            
-            % Shared MLP 1
-            X = layer.SharedMLP(X_permuted, sharedMLP1Net);
-
-            % Feature transform (T-net)
-            X_feature = layer.SharedMLP(X, featureTransformNet);
-            T = layer.PredictTransform(X_feature, featureTransformPredictionNet);
-            X = permute(X, [2, 1, 3]);
-            X = X * T;
-            X_permuted = permute(X, [2, 1, 3]);
-
-            % Shared MLP 2
-            X = layer.SharedMLP(X_permuted, sharedMLP2Net);
-
-            % Max pooling
-            X = max(X, [], 2);
-            
-            % disp('Size of X after max pooling:');
-            % disp(size(X));
-
-            % Reshape the output to match the expected format SxC
-            if size(X, 1) ~= 1 || size(X, 2) ~= 1
-                X = reshape(X, [1, numel(X)]);
+            for b = 1:batchSize
+                % Extract the batch
+                X_batch = X(:, :, b);
+        
+                % Permute to 'CB' format for processing
+                X_permuted = permute(X_batch, [2, 1]);  % Now [3, numPoints]
+        
+                % Input transform (T-net)
+                X_feature = layer.SharedMLP(X_permuted, inputTransformNet);
+                T = layer.PredictTransform(X_feature, inputTransformPredictionNet);
+                X_transformed = pagemtimes(X_batch, T);
+                X_transformed = permute(X_transformed, [2, 1]);
+        
+                % Shared MLP 1
+                X_mlp1 = layer.SharedMLP(X_transformed, sharedMLP1Net);
+        
+                % Feature transform (T-net)
+                X_feature = layer.SharedMLP(X_mlp1, featureTransformNet);
+                T = layer.PredictTransform(X_feature, featureTransformPredictionNet);
+                X_mlp1 = permute(X_mlp1, [2, 1]);
+                X_transformed = pagemtimes(X_mlp1, T);
+                X_transformed = permute(X_transformed, [2, 1]);
+        
+                % Shared MLP 2
+                X_mlp2 = layer.SharedMLP(X_transformed, sharedMLP2Net);
+        
+                % Max pooling along the points dimension
+                X_maxpooled = max(X_mlp2, [], 2);  % Now [numChannels, 1]
+        
+                % Store the result for the batch
+                Z(:, b) = reshape(X_maxpooled, [], 1);  % Flatten to [outputSize, 1]
             end
             
             % Convert Z to a dlarray before returning
-            X = dlarray(X);
-
-            % Assign the final output to Z
-            Z = X;
+            Z = dlarray(Z);
         end
         
         function T = PredictTransform(~, X, transformPredictionNet)
