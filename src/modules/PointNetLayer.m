@@ -129,7 +129,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
 
             % Reshape the output to match the expected format [1, 1, featureSize]
             if size(X, 1) ~= 1 || size(X, 2) ~= 1
-                X = reshape(X, [1, 1, numel(X)]);
+                X = reshape(X, [1, numel(X)]);
             end
             
             % Convert Z to a dlarray before returning

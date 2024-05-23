@@ -34,8 +34,7 @@ disp('Analyzing the network...');
 analyzeNetwork(model);
 
 % Define the layers you want to train (e.g., the last three layers)
-layersToTrain = {'conv1', 'conv1_1', 'conv', 'conv_1', 'conv_2', ...
-    'batchnorm', 'batchnorm_1', 'batchnorm_2', 'fc', 'fc_1', 'fc_2'};
+layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'combine_fc1', 'combine_fc2'};
 
 % Freeze all layers first by setting their learning rate multipliers to 0
 model = modifyLearningRates(model, {model.Layers.Name}, 0);
