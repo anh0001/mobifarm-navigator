@@ -164,8 +164,7 @@ tempNet = [
     dropoutLayer(0.5,"Name","drop9")
     convolution2dLayer([1 1],1000,"Name","conv10","Bias",params.conv10.Bias,"Weights",params.conv10.Weights)
     reluLayer("Name","relu_conv10")
-    globalAveragePooling2dLayer("Name","pool10")
-    flattenLayer("Name","img_flatten")];
+    globalAveragePooling2dLayer("Name","img_pool10")];
 net = addLayers(net,tempNet);
 
 tempNet = [
@@ -306,20 +305,23 @@ tempNet = [
     dropoutLayer(0.5,"Name","drop9_1")
     convolution2dLayer([1 1],1000,"Name","conv10_1","Bias",params.conv10_1.Bias,"Weights",params.conv10_1.Weights)
     reluLayer("Name","relu_conv10_1")
-    globalAveragePooling2dLayer("Name","pool10_1")
-    flattenLayer("Name","lidar_flatten")];
+    globalAveragePooling2dLayer("Name","lidar_pool10_1")];
 net = addLayers(net,tempNet);
 
-numPoints = 61440;
 tempNet = [
-    pointCloudInputLayer([numPoints 3], 'Name', 'pc_input', 'Normalization', 'none');
+    pointCloudInputLayer([61440 3],"Name","pc_input")
     PointNetLayer(3, [3 64], 64, [64 1024], 'Name', 'pc_pointnet')
-    % DebugLayer('pcPointNet_debug');
-    flattenLayer("Name","pc_flatten")];
+    ReshapeSCBtoSSCBLayer("pc_reshape")];
 net = addLayers(net,tempNet);
 
 tempNet = [
-    depthConcatenationLayer(3,"Name","combine_depthcat")
+    depthConcatenationLayer(2,"Name","rgbd_depthcat")
+    convolution2dLayer([1 1],512,"Name","rgbd_conv1","Padding","same")
+    convolution2dLayer([1 1],1024,"Name","rgbd_conv2","Padding","same")];
+net = addLayers(net,tempNet);
+
+tempNet = [
+    depthConcatenationLayer(2,"Name","combine_depthcat")
     fullyConnectedLayer(256,"Name","combine_fc1","WeightsInitializer","narrow-normal")
     reluLayer("Name","combine_relu")
     dropoutLayer(0.5,"Name","combine_dropout")
@@ -364,6 +366,7 @@ net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand1x1");
 net = connectLayers(net,"fire9-relu_squeeze1x1","fire9-expand3x3");
 net = connectLayers(net,"fire9-relu_expand1x1","fire9-concat/in1");
 net = connectLayers(net,"fire9-relu_expand3x3","fire9-concat/in2");
+net = connectLayers(net,"img_pool10","rgbd_depthcat/in1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand1x1_1");
 net = connectLayers(net,"fire2-relu_squeeze1x1_1","fire2-expand3x3_1");
 net = connectLayers(net,"fire2-relu_expand1x1_1","fire2-concat_1/in1");
@@ -396,10 +399,9 @@ net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand1x1_1");
 net = connectLayers(net,"fire9-relu_squeeze1x1_1","fire9-expand3x3_1");
 net = connectLayers(net,"fire9-relu_expand1x1_1","fire9-concat_1/in1");
 net = connectLayers(net,"fire9-relu_expand3x3_1","fire9-concat_1/in2");
-
-net = connectLayers(net,"img_flatten","combine_depthcat/in1");
-net = connectLayers(net,"lidar_flatten","combine_depthcat/in2");
-net = connectLayers(net,"pc_flatten","combine_depthcat/in3");
+net = connectLayers(net,"lidar_pool10_1","combine_depthcat/in2");
+net = connectLayers(net,"pc_reshape","rgbd_depthcat/in2");
+net = connectLayers(net,"rgbd_conv2","combine_depthcat/in1");
 
 % %% For debugging
 % % Add debug layers before concatenation
