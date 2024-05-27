@@ -1,10 +1,15 @@
 classdef ReshapeSCBtoSSCBLayer < nnet.layer.Layer & nnet.layer.Formattable
+    % ReshapeSCBtoSSCBLayer
+    % This custom layer reshapes input data from SCB format (Spatial, Channel, Batch)
+    % to SSCB format (Spatial, Spatial, Channel, Batch) for use in neural network layers.
+
     properties
         % Define any properties if necessary
     end
     
     methods
         function layer = ReshapeSCBtoSSCBLayer(name)
+            % Constructor method to initialize the layer
             % Set layer name
             layer.Name = name;
             
@@ -15,38 +20,35 @@ classdef ReshapeSCBtoSSCBLayer < nnet.layer.Layer & nnet.layer.Formattable
         function Z = predict(layer, X)
             % Forward input data through the layer at prediction time
             % X: Input data of size [S, C, B]
-            % Z: Output data of size [S, C, B] or [S, S, C, B]
+            % Z: Output data of size [1, S, C, B]
             
             % Get the size of the input
             sz = size(X);
             
-            % % Display the size of the input
-            % disp('Size of X at input of predict:');
-            % disp(sz);
+            % Extract dimensions
+            S = sz(1);  % Spatial dimension
+            C = sz(2);  % Channel dimension
+            B = sz(3);  % Batch dimension
             
-            % If input is of size [S, C, B], reshape to [S, C, B, 1] and permute to [1, S, C, B]
-            S = sz(1);
-            C = sz(2);
-            B = sz(3);
+            % Reshape input from [S, C, B] to [S, C, B, 1] and then permute to [1, S, C, B]
             Z = reshape(X, [S, C, B, 1]);
-            Z = permute(Z, [4, 1, 2, 3]);
-            Z = dlarray(Z, 'SSCB');
+            Z = permute(Z, [4, 1, 2, 3]);  % Permute dimensions to [1, S, C, B]
             
-            % % Display the size of the output
-            % disp('Size of Z at output of predict:');
-            % disp(size(Z));
+            % Convert the output to a dlarray with the format 'SSCB'
+            Z = dlarray(Z, 'SSCB');
         end
         
         function [dLdX] = backward(layer, X, ~, dLdZ, ~)
             % Backward propagate the derivative of the loss function
             % through the layer
             % X: Input data of size [S, C, B]
-            % Z: Output data of size [S, S, C] or [S, S, C, B]
-            % dLdZ: Gradients propagated to the output [S, S, C] or [S, S, C, B]
-            % dLdX: Gradients propagated to the input [S, C] or [S, C, B]
+            % dLdZ: Gradients propagated to the output [1, S, C, B]
+            % dLdX: Gradients propagated to the input [S, C, B]
             
-            % Permute back the gradients
+            % Permute back the gradients from [1, S, C, B] to [S, C, B, 1]
             dLdZ_permuted = permute(dLdZ, [2, 3, 4, 1]);
+            
+            % Reshape the permuted gradients to match the size of the input
             dLdX = reshape(dLdZ_permuted, size(X));
         end
     end
