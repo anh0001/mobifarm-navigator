@@ -7,38 +7,46 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
     disp('Configuring training options...');
     
     %% Configure Training Options
+    % Set up the training options for the stochastic gradient descent with momentum (SGDM) optimizer
     options = trainingOptions('sgdm', ...
-        'InitialLearnRate', 1e-3, ...  % Start with a higher learning rate
-        'Momentum', 0.9, ...  % Typical value for momentum
-        'LearnRateSchedule', 'piecewise', ...  % Implement piecewise learning rate schedule
-        'LearnRateDropPeriod', 10, ...  % Drop learning rate every 10 epochs
-        'LearnRateDropFactor', 0.1, ...  % Drop learning rate by a factor of 0.1
-        'MaxEpochs', 30, ...
-        'MiniBatchSize', 8, ...
-        'ValidationData', dataVal, ...
-        'ValidationFrequency', 60, ...
-        'Verbose', true, ...
-        'Plots', 'training-progress', ...
-        'ExecutionEnvironment', 'auto', ...
-        'CheckpointPath', 'data/checkpoints');  % custom function
+        'InitialLearnRate', 1e-3, ...  % Initial learning rate
+        'Momentum', 0.9, ...  % Momentum value to accelerate gradients vectors
+        'LearnRateSchedule', 'piecewise', ...  % Schedule for changing learning rate
+        'LearnRateDropPeriod', 10, ...  % Number of epochs after which learning rate drops
+        'LearnRateDropFactor', 0.1, ...  % Factor by which learning rate decreases
+        'MaxEpochs', 30, ...  % Maximum number of training epochs
+        'MiniBatchSize', 8, ...  % Number of samples per gradient update
+        'ValidationData', dataVal, ...  % Validation data for monitoring training progress
+        'ValidationFrequency', 60, ...  % Frequency of validation
+        'Verbose', true, ...  % Display training progress information
+        'Plots', 'training-progress', ...  % Plot training progress
+        'ExecutionEnvironment', 'auto', ...  % Automatically select execution environment
+        'CheckpointPath', 'data/checkpoints');  % Path to save checkpoint data
 
     %% Train the Model
     disp('Starting model training...');
-    [trainedModel, trainInfo] = trainnet(dataTrain, model, 'mse', options);
+    [trainedModel, trainInfo] = trainnet(dataTrain, model, 'mse', options); % Train the model with mean squared error loss
 
     disp('Model training complete.');
 end
 
 function stop = stopIfAccuracyNotImproving(info, N)
-    stop = false;
-    if strcmp(info.State, 'done')
+    % stopIfAccuracyNotImproving
+    % This function checks if the validation loss has stopped improving for N epochs.
+    % If so, it stops the training early to prevent overfitting.
+    % Returns a logical value indicating whether to stop training.
+
+    stop = false; % Initialize stop flag as false
+
+    if strcmp(info.State, 'done') % If training is done, return false
         return;
     end
+
     % Ensure ValidationLoss is a vector and has enough entries
     if isfield(info, 'ValidationLoss') && numel(info.ValidationLoss) >= N
-        % Check if the most recent ValidationLoss values have improved
+        % Check if the most recent ValidationLoss values have not improved
         if info.Epoch > N && any(info.ValidationLoss(end-N:end) > min(info.ValidationLoss(1:end-N)))
-            stop = true;
+            stop = true; % Set stop flag to true
             disp('Stopping early due to no improvement in validation loss.');
         end
     end
