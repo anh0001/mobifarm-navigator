@@ -34,7 +34,7 @@ checkpointFiles = dir(fullfile(checkpointDir, '*.mat')); % List all .mat files i
 
 % Check if there is a .mat file in the models/ folder
 modelDir = 'models';           % Directory containing model files
-modelFiles = dir(fullfile(modelDir, '*.mat')); % List all .mat files in the model directory
+modelFiles = dir(fullfile(modelDir, 'model_*.mat')); % List all .mat files in the model directory
 
 if strcmp(mode, 'resume') && ~isempty(checkpointFiles)
     % Load the latest checkpoint if resuming
@@ -70,8 +70,16 @@ if strcmp(mode, 'training') || strcmp(mode, 'resume')
     [model, trainInfo] = trainModel(model, dataTrain, dataVal); % Call function to train the model
     
     % Optionally, save the model and training information
-    save('models/model.mat', 'model'); % Save the trained model
-    save('trainingInfo.mat', 'trainInfo'); % Save the training information
+    if ~isempty(modelFiles)
+        % Extract the index of the latest model file
+        latestModelIndex = max(cellfun(@(x) str2double(x{1}), regexp({modelFiles.name}, 'model_(\d+)\.mat', 'tokens')));
+    else
+        % No existing model files, start from 0
+        latestModelIndex = 0;
+    end
+    newModelIndex = latestModelIndex + 1;
+    save(fullfile(modelDir, sprintf('model_%03d.mat', newModelIndex)), 'model'); % Save the trained model
+    save(fullfile(modelDir, sprintf('trainingInfo_%03d.mat', newModelIndex)), 'trainInfo'); % Save the training information
 end
 
 if strcmp(mode, 'evaluate')
