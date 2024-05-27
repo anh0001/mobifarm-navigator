@@ -1,25 +1,31 @@
 classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
-    
+    % PointNetLayer
+    % This class defines a custom layer for the PointNet architecture used in deep learning
+    % for processing point clouds in 3D space. The layer includes learnable parameters and 
+    % methods for prediction and encoding.
+
     properties
         % PointNet encoder properties
-        InputTransformSize
-        SharedMLP1Sizes
-        FeatureTransformSize
-        SharedMLP2Sizes
+        InputTransformSize       % Size of the input transform network
+        SharedMLP1Sizes          % Sizes of the first shared MLP layers
+        FeatureTransformSize     % Size of the feature transform network
+        SharedMLP2Sizes          % Sizes of the second shared MLP layers
     end
     
     properties (Learnable)
         % PointNet encoder learnable parameters
-        InputTransformNetwork
-        InputTransformPredictionNetwork
-        SharedMLP1Network
-        FeatureTransformNetwork
-        FeatureTransformPredictionNetwork
-        SharedMLP2Network
+        InputTransformNetwork            % Learnable network for input transform
+        InputTransformPredictionNetwork  % Learnable network for input transform prediction
+        SharedMLP1Network                % Learnable network for the first shared MLP
+        FeatureTransformNetwork          % Learnable network for feature transform
+        FeatureTransformPredictionNetwork % Learnable network for feature transform prediction
+        SharedMLP2Network                % Learnable network for the second shared MLP
     end
     
     methods
         function layer = PointNetLayer(inputTransformSize, sharedMLP1Sizes, featureTransformSize, sharedMLP2Sizes, varargin)
+            % Constructor method to initialize the PointNetLayer with specified sizes
+            
             % Set PointNet encoder properties
             layer.InputTransformSize = inputTransformSize;
             layer.SharedMLP1Sizes = sharedMLP1Sizes;
@@ -42,19 +48,19 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function Z = predict(layer, X)
-            % PointNet encoder
+            % Predict method for the PointNetLayer
+            % Encodes the input point cloud data using the PointNet encoder and returns the encoded output
+            
             Z = layer.PointNetEncoder(X, layer.InputTransformNetwork, ...
                 layer.InputTransformPredictionNetwork, layer.SharedMLP1Network, ...
                 layer.FeatureTransformNetwork, layer.FeatureTransformPredictionNetwork, ...
                 layer.SharedMLP2Network);
-            
-            % disp('Size of Z at output of predict:');
-            % disp(size(Z));
         end
     end
     
     methods (Access = private)
         function dlnet = createTNet(~, size, prefix)
+            % Create a T-Net (transform network) for affine transformations
             layers = [
                 featureInputLayer(size, 'Name', [prefix, '_input'])
                 fullyConnectedLayer(size, 'Name', [prefix, '_fc1'])
@@ -69,6 +75,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
 
         function dlnet = createTransformPredictionNetwork(~, size, prefix)
+            % Create a network for predicting affine transformation matrices
             layers = [
                 featureInputLayer(size, 'Name', [prefix, '_input'])
                 fullyConnectedLayer(size, 'Name', [prefix, '_fc4'])
@@ -80,6 +87,7 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function dlnet = createMLPNetwork(~, sizes, prefix)
+            % Create a multi-layer perceptron (MLP) network
             layers = [
                 featureInputLayer(sizes(1), 'Name', [prefix, '_input'])
             ];
@@ -95,6 +103,9 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function Z = PointNetEncoder(layer, X, inputTransformNet, inputTransformPredictionNet, sharedMLP1Net, featureTransformNet, featureTransformPredictionNet, sharedMLP2Net)
+            % PointNet encoder
+            % Encodes the input point cloud data using a series of MLPs and transformation networks
+
             % Input is point clouds with dimensions (S, C, B)
             % where S is the number of points, C is 3 for 3D points, and B is the batch size
         
@@ -148,24 +159,24 @@ classdef PointNetLayer < nnet.layer.Layer & nnet.layer.Acceleratable
         end
         
         function T = PredictTransform(~, X, transformPredictionNet)
+            % Predict affine transformation matrix
+            % Predicts the transformation matrix from the encoded features
+
             % Symmetric function (max pooling)
             X = max(X, [], 2);
 
             % Affine transformation matrix prediction
             X = predict(transformPredictionNet, dlarray(X, 'CB'));
             T = reshape(extractdata(X), [sqrt(size(X, 1)), sqrt(size(X, 1))]);
-
-            % disp('Affine transformation matrix T:');
-            % disp(T);
         end
 
         function X = SharedMLP(~, X, dlnet)
+            % Shared MLP
+            % Applies a shared multi-layer perceptron to the input data
+
             % No need to permute again here, as it is already in 'CB' format
             X = predict(dlnet, dlarray(X, 'CB'));
             X = extractdata(X);
-            
-            % disp(['Size of X after shared MLP:']);
-            % disp(size(X));
         end
     end
 end
