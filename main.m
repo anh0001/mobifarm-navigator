@@ -18,6 +18,9 @@ disp('Starting the Mobile Robot Navigation Project...');
 disp('Initializing project...');
 initialize;
 
+% Ask the user for the mode (training, resume from checkpoints, or evaluate model)
+mode = input('Enter the mode (training, resume, evaluate): ', 's');
+
 %% Data Preparation
 % Load and preprocess data
 disp('Loading and preprocessing data...');
@@ -29,14 +32,19 @@ dataTest = dataVal;
 checkpointDir = 'data/checkpoints';
 checkpointFiles = dir(fullfile(checkpointDir, '*.mat'));
 
-if ~isempty(checkpointFiles)
+% Check if there is a .mat file in the models/ folder
+modelDir = 'models';
+modelFiles = dir(fullfile(modelDir, '*.mat'));
+
+if strcmp(mode, 'resume') && ~isempty(checkpointFiles)
     % Load the latest checkpoint
     [~, idx] = max([checkpointFiles.datenum]);
     latestCheckpoint = fullfile(checkpointFiles(idx).folder, checkpointFiles(idx).name);
     disp(['Resuming from checkpoint: ', latestCheckpoint]);
     load(latestCheckpoint, 'net', 'trainingOptions'); % Load the network and training options
     model = net; % Rename loaded network to model for consistency
-else
+
+elseif strcmp(mode, 'training')
     % No checkpoint found, build the model from scratch
     disp('Building the model...');
     model = modelBuild();
@@ -55,26 +63,38 @@ else
     model = modifyLearningRates(model, layersToTrain, 1);
 end
 
-%% Model Training
-% Train the model with the training data
-disp('Training the model...');
-[model, trainInfo] = trainModel(model, dataTrain, dataVal);
+if strcmp(mode, 'training') || strcmp(mode, 'resume')
+    %% Model Training
+    % Train the model with the training data
+    disp('Training the model...');
+    [model, trainInfo] = trainModel(model, dataTrain, dataVal);
+end
 
-% %% Model Evaluation
-% % Evaluate the model on the test data
-% disp('Evaluating the model...');
-% accuracy = evaluateModel(model, dataTest);
-% 
-% %% Results
-% % Display or save the results
-% disp(['Test Accuracy: ', num2str(accuracy)]);
-% disp('Project completed successfully.');
-% 
-% % Optionally, you can save the model and results
-% save('modelFinal.mat', 'model');
-% save('trainingInfo.mat', 'trainInfo');
-% 
-% % Remove paths added at the beginning
-% rmpath(genpath('src'));
-% rmpath(genpath('lib'));
-% rmpath(genpath('tools'));
+if strcmp(mode, 'evaluate')
+    %% Model Evaluation
+
+    % select the latest model file
+    [~, idx] = max([modelFiles.datenum]);
+    latestModel = fullfile(modelFiles(idx).folder, modelFiles(idx).name);
+    disp(['Evaluating the latest model: ', latestModel]);
+    load(latestModel, 'model'); % Load the model
+
+    % Evaluate the model on the test data
+    disp('Evaluating the model...');
+    accuracy = evaluateModel(model, dataTest);
+    disp(['Test Accuracy: ', num2str(accuracy)]);
+end
+
+%% Results
+% Display or save the results
+disp(['Test Accuracy: ', num2str(accuracy)]);
+disp('Project completed successfully.');
+
+% Optionally, you can save the model and results
+save('modelFinal.mat', 'model');
+save('trainingInfo.mat', 'trainInfo');
+
+% Remove paths added at the beginning
+rmpath(genpath('src'));
+rmpath(genpath('lib'));
+rmpath(genpath('tools'));
