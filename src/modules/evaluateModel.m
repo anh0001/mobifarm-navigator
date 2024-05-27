@@ -17,14 +17,18 @@ function rmse = evaluateModel(model, dataTest, batchSize)
         batchIndices = startIdx:endIdx;
 
         % Extract the batch data
-        batchDataTest = subset(dataTest, batchIndices);
+        if all(batchIndices <= numObservations)
+            batchDataTest = subset(dataTest, batchIndices);
 
-        % Evaluate the batch
-        batchError = evaluateBatch(model, batchDataTest);
-        
-        % Update overall squared error and prediction count
-        totalSquaredError = totalSquaredError + batchError.squaredError;
-        totalPredictions = totalPredictions + batchError.total;
+            % Evaluate the batch
+            batchError = evaluateBatch(model, batchDataTest);
+            
+            % Update overall squared error and prediction count
+            totalSquaredError = totalSquaredError + batchError.squaredError;
+            totalPredictions = totalPredictions + batchError.total;
+        else
+            warning('Batch indices exceed the number of observations.');
+        end
     end
 
     % Compute the overall RMSE
@@ -74,7 +78,7 @@ function batchError = evaluateBatch(model, batchDataTest)
             end
         elseif i == 3
             % Third input
-            if ~isa(data, 'dlarray')
+            if !isa(data, 'dlarray')
                 data = dlarray(data, 'SCB'); % Spatial, Channel, Batch
             end
         end
