@@ -86,8 +86,8 @@ if strcmp(mode, 'evaluate')
     % Evaluate the model on the test data
     disp('Evaluating the model...');
     batchSize = 10; % Set an appropriate batch size
-    accuracy = evaluateModel(model, dataVal, batchSize);
-    disp(['Test Accuracy: ', num2str(accuracy)]);
+    rmse = evaluateModel(model, dataVal, batchSize);
+    disp(['Overall model RMSE: ', num2str(rmse)]);
 end
 
 % Remove paths added at the beginning

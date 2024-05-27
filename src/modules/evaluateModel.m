@@ -1,4 +1,4 @@
-function accuracy = evaluateModel(model, dataTest, batchSize)
+function rmse = evaluateModel(model, dataTest, batchSize)
     % evaluateModel
     % This function evaluates the model in batches to handle large datasets.
     % Inputs:
@@ -6,10 +6,10 @@ function accuracy = evaluateModel(model, dataTest, batchSize)
     %   - dataTest: the test dataset
     %   - batchSize: size of each batch
     % Output:
-    %   - accuracy: overall accuracy of the model
+    %   - rmse: overall Root Mean Squared Error of the model
 
     numObservations = numel(dataTest.UnderlyingDatastores{1}.Files);
-    correctPredictions = 0;
+    totalSquaredError = 0;
     totalPredictions = 0;
 
     for startIdx = 1:batchSize:numObservations
@@ -20,27 +20,26 @@ function accuracy = evaluateModel(model, dataTest, batchSize)
         batchDataTest = subset(dataTest, batchIndices);
 
         % Evaluate the batch
-        batchAccuracy = evaluateBatch(model, batchDataTest);
+        batchError = evaluateBatch(model, batchDataTest);
         
-        % Update overall accuracy
-        correctPredictions = correctPredictions + batchAccuracy.correct;
-        totalPredictions = totalPredictions + batchAccuracy.total;
+        % Update overall squared error and prediction count
+        totalSquaredError = totalSquaredError + batchError.squaredError;
+        totalPredictions = totalPredictions + batchError.total;
     end
 
-    % Compute the overall accuracy
-    accuracy = correctPredictions / totalPredictions;
-
-    disp(['Overall model accuracy: ', num2str(accuracy * 100), '%']);
+    % Compute the overall RMSE
+    mse = totalSquaredError / totalPredictions;
+    rmse = sqrt(mse);
 end
 
-function batchAccuracy = evaluateBatch(model, batchDataTest)
+function batchError = evaluateBatch(model, batchDataTest)
     % evaluateBatch
     % This function evaluates a batch of data.
     % Inputs:
     %   - model: the trained model
     %   - batchDataTest: a batch of test data
     % Output:
-    %   - batchAccuracy: a structure with correct and total predictions
+    %   - batchError: a structure with squared error and total predictions
 
     % Check the input names of the model
     inputNames = model.InputNames;
@@ -53,7 +52,13 @@ function batchAccuracy = evaluateBatch(model, batchDataTest)
         
         % If data is a cell array, extract its contents
         if iscell(data)
-            data = cell2mat(data);
+            if i == 1 || i == 2
+                % First and second inputs are images in SSC format
+                data = cat(4, data{:}); % Concatenate along the 4th dimension to form SxSxCxB
+            elseif i == 3
+                % Third input is in SC format
+                data = cat(3, data{:}); % Concatenate along the 3rd dimension to form SxCxB
+            end
         end
 
         % Convert to single if necessary
@@ -62,8 +67,16 @@ function batchAccuracy = evaluateBatch(model, batchDataTest)
         end
         
         % Convert to dlarray if necessary
-        if ~isa(data, 'dlarray')
-            data = dlarray(data);
+        if i == 1 || i == 2
+            % First and second inputs
+            if ~isa(data, 'dlarray')
+                data = dlarray(data, 'SSCB'); % Spatial, Spatial, Channel, Batch
+            end
+        elseif i == 3
+            % Third input
+            if ~isa(data, 'dlarray')
+                data = dlarray(data, 'SCB'); % Spatial, Channel, Batch
+            end
         end
         
         inputs{i} = data;
@@ -75,25 +88,22 @@ function batchAccuracy = evaluateBatch(model, batchDataTest)
     % Extract the ground truth labels from the batch data
     labelsDS = batchDataTest.UnderlyingDatastores{end}; % Assuming the labels are the last datastore
     actualOutputs = readall(labelsDS);
-    
-    % If actualOutputs is a cell array, extract its contents
+    % If data is a cell array, extract its contents
     if iscell(actualOutputs)
         actualOutputs = cell2mat(actualOutputs);
     end
-
-    % Convert labels to appropriate format if necessary
-    if ~isa(actualOutputs, 'single') && ~isa(actualOutputs, 'double') && ~isa(actualOutputs, 'logical')
-        actualOutputs = single(actualOutputs);
-    end
-    if ~isa(actualOutputs, 'dlarray')
-        actualOutputs = dlarray(actualOutputs);
-    end
-
-    % Calculate batch accuracy
-    correctPredictions = sum(extractdata(predictedOutputs) == extractdata(actualOutputs));
-    totalPredictions = numel(extractdata(actualOutputs));
+    
+    % Calculate squared error
+    % Convert predictedOutputs to a double array
+    predictedOutputs = extractdata(predictedOutputs);
+    % Ensure predictedOutputs and actualOutputs have compatible dimensions
+    predictedOutputs = permute(predictedOutputs, [2, 1]);
+    % Compute the error
+    error = predictedOutputs - actualOutputs;
+    % Compute the squared error
+    squaredError = sum(error .^ 2, 'all');
     
     % Store results in a structure
-    batchAccuracy.correct = correctPredictions;
-    batchAccuracy.total = totalPredictions;
+    batchError.squaredError = squaredError;
+    batchError.total = size(actualOutputs, 1); % Number of data points in the batch
 end
