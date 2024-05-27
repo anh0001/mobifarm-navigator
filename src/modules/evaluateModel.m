@@ -4,8 +4,6 @@ function accuracy = evaluateModel(model, dataTest)
     % and evaluates it using the test dataset.
     % It returns the accuracy of the model.
 
-    disp('Evaluating the model...');
-
     % Check the input names of the model
     inputNames = model.InputNames;
 
