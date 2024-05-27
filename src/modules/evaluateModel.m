@@ -78,7 +78,7 @@ function batchError = evaluateBatch(model, batchDataTest)
             end
         elseif i == 3
             % Third input
-            if !isa(data, 'dlarray')
+            if ~isa(data, 'dlarray')
                 data = dlarray(data, 'SCB'); % Spatial, Channel, Batch
             end
         end
