@@ -85,7 +85,8 @@ if strcmp(mode, 'evaluate')
     
     % Evaluate the model on the test data
     disp('Evaluating the model...');
-    accuracy = evaluateModel(model, dataTest);
+    batchSize = 10; % Set an appropriate batch size
+    accuracy = evaluateModel(model, dataVal, batchSize);
     disp(['Test Accuracy: ', num2str(accuracy)]);
 end
 
