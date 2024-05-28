@@ -9,7 +9,7 @@ function [dataTrain, dataVal] = dataPrep()
     processedDir = 'data/processed/'; % Directory where processed data is stored
     
     %% Dataset Folders
-    datasets = {'data_cave'}; % List of datasets to be processed
+    datasets = {'data_cave', 'data_city', 'data_house'}; % List of datasets to be processed
     
     %% Initialize cell arrays to collect datastores
     trainDatastores = {}; % Cell array to hold training datastores
@@ -21,11 +21,13 @@ function [dataTrain, dataVal] = dataPrep()
         
         % Load and Preprocess Training Data
         trainDir = fullfile(processedDir, dataset, 'train'); % Path to training data
-        trainDatastores = [trainDatastores; preprocessData(trainDir)]; % Preprocess and store training data
+        trainDS = preprocessData(trainDir); % Preprocess and store training data
+        trainDatastores = [trainDatastores, trainDS]; % Concatenate cell arrays
         
         % Load and Preprocess Validation Data
         valDir = fullfile(processedDir, dataset, 'val'); % Path to validation data
-        valDatastores = [valDatastores; preprocessData(valDir)]; % Preprocess and store validation data
+        valDS = preprocessData(valDir); % Preprocess and store validation data
+        valDatastores = [valDatastores, valDS]; % Concatenate cell arrays
     end
     
     %% Combine all the datastores
