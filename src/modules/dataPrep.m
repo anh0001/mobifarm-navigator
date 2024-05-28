@@ -21,11 +21,11 @@ function [dataTrain, dataVal] = dataPrep()
         
         % Load and Preprocess Training Data
         trainDir = fullfile(processedDir, dataset, 'train'); % Path to training data
-        trainDatastores = [trainDatastores, preprocessData(trainDir)]; % Preprocess and store training data
+        trainDatastores = [trainDatastores; preprocessData(trainDir)]; % Preprocess and store training data
         
         % Load and Preprocess Validation Data
         valDir = fullfile(processedDir, dataset, 'val'); % Path to validation data
-        valDatastores = [valDatastores, preprocessData(valDir)]; % Preprocess and store validation data
+        valDatastores = [valDatastores; preprocessData(valDir)]; % Preprocess and store validation data
     end
     
     %% Combine all the datastores
@@ -90,7 +90,7 @@ function combinedDatastores = preprocessData(folderPath)
         % Combine the datastores into a single datastore
         combinedDS = combine(imgDS, lidarDS, pcdDS, labelsDS); % Combine all datastores into one
         
-        combinedDatastores = [combinedDatastores, combinedDS];
+        combinedDatastores{end+1} = combinedDS; % Store the combined datastore in a cell array
     end
 end
 
