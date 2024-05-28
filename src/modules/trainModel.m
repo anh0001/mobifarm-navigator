@@ -9,7 +9,7 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
     %% Configure Training Options
     % Set up the training options for the stochastic gradient descent with momentum (SGDM) optimizer
     options = trainingOptions('sgdm', ...
-        'InitialLearnRate', 1e-3, ...  % Initial learning rate
+        'InitialLearnRate', 1e-2, ...  % Initial learning rate
         'Momentum', 0.9, ...  % Momentum value to accelerate gradients vectors
         'LearnRateSchedule', 'piecewise', ...  % Schedule for changing learning rate
         'LearnRateDropPeriod', 10, ...  % Number of epochs after which learning rate drops
