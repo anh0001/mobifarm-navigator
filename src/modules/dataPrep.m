@@ -79,13 +79,9 @@ function combinedDatastores = preprocessData(folderPath)
         
         % Load Processed Point Cloud Data using fileDatastore
         pcdDS = fileDatastore(fullfile({pcdFiles.folder}, {pcdFiles.name}), 'ReadFcn', @bacaNPY, 'FileExtensions', {'.npy'}); % File datastore for point cloud data
-        
-        % Load Labels into an array
-        labelData = cellfun(@readmatrix, fullfile({labelFiles.folder}, {labelFiles.name}), 'UniformOutput', false); % Load labels from text files
-        labelDataMatrix = vertcat(labelData{:}); % Convert cell array to a matrix
-        
-        % Create an arrayDatastore for linear and angular velocities
-        labelsDS = arrayDatastore(labelDataMatrix, 'IterationDimension', 1); % Array datastore for labels
+
+        % Load Labels Data using fileDatastore
+        labelsDS = fileDatastore(fullfile({labelFiles.folder}, {labelFiles.name}), 'ReadFcn', @readmatrix, 'FileExtensions', {'.txt'}); % File datastore for labels data
         
         % Combine the datastores into a single datastore
         combinedDS = combine(imgDS, lidarDS, pcdDS, labelsDS); % Combine all datastores into one
