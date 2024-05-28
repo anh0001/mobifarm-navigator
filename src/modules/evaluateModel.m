@@ -8,7 +8,8 @@ function rmse = evaluateModel(model, dataTest, batchSize)
 % Output:
 %   - rmse: overall Root Mean Squared Error of the model
 
-numObservations = numel(dataTest.UnderlyingDatastores{1}.Files);
+% Ensure all underlying datastores have the same number of observations
+numObservations = min(cellfun(@(ds) numel(ds.Files), dataTest.UnderlyingDatastores));
 totalSquaredError = 0;
 totalPredictions = 0;
 
