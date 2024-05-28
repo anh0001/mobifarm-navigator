@@ -17,16 +17,8 @@ for startIdx = 1:batchSize:numObservations
     endIdx = min(startIdx + batchSize - 1, numObservations);
     batchIndices = startIdx:endIdx;
     
-    try
-        % Attempt to subset the combined datastore
-        batchDataTest = subset(dataTest, batchIndices);
-    catch ME
-        disp('Error with subset operation:');
-        disp(ME.message);
-        disp('Available indices:');
-        disp(dataTest.NumObservations);
-        return;
-    end
+    % Attempt to subset the combined datastore
+    batchDataTest = subset(dataTest, batchIndices);
     
     % Evaluate the batch
     batchError = evaluateBatch(model, batchDataTest);
