@@ -309,7 +309,7 @@ function model = modelBuild_1fusion()
     tempNet = [
         depthConcatenationLayer(3,"Name","combine_depthcat")
         convolution2dLayer([1 1],512,"Name","combine_conv1","Padding","same")
-        convolution2dLayer([1 1],1024,"Name","combine_conv2","Padding","same")];
+        convolution2dLayer([1 1],1024,"Name","combine_conv2","Padding","same")
         fullyConnectedLayer(256,"Name","combine_fc1","WeightsInitializer","narrow-normal")
         reluLayer("Name","combine_relu")
         dropoutLayer(0.5,"Name","combine_dropout")
