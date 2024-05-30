@@ -47,14 +47,15 @@ if strcmp(mode, 'resume') && ~isempty(checkpointFiles)
 elseif strcmp(mode, 'training')
     % Build the model from scratch if training
     disp('Building the model...');
-    model = modelBuild(); % Call function to build the model
+    model = modelBuild_1fusion(); % Call function to build the model
     
     % Analyze the network
     disp('Analyzing the network...');
     analyzeNetwork(model); % Call function to analyze the network
     
     % Define the layers to train
-    layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'rgbd_conv1', 'rgbd_conv1', 'combine_fc1', 'combine_fc2'};
+    % layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'rgbd_conv1', 'rgbd_conv1', 'combine_fc1', 'combine_fc2'};  % Using 2 fusions model
+    layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'combine_conv1', 'combine_conv1', 'combine_fc1', 'combine_fc2'};  % Using 1 fusion model
     
     % Freeze all layers by setting their learning rate multipliers to 0
     model = modifyLearningRates(model, {model.Layers.Name}, 0);
