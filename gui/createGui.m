@@ -78,9 +78,7 @@ function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGT
             % Perform prediction
             prediction = predict(model, img, lidar, pcd);
             prediction = extractdata(prediction);
-            disp('Predicted velocities:');
-            disp(prediction);
-
+           
             % Assuming the model returns linear and angular velocities
             linearVelocity = prediction(1);
             angularVelocity = prediction(2);
