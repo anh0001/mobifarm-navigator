@@ -6,6 +6,7 @@
 addpath(genpath('src'));   % Add source code directory
 addpath(genpath('lib'));   % Add library directory
 addpath(genpath('tools')); % Add tools directory
+addpath(genpath('gui'));   % Add the GUI directory to the path
 
 % Clear workspace and command window
 clear; % Clear all variables from the workspace
@@ -19,7 +20,7 @@ disp('Initializing project...');
 initialize; % Call the initialization script
 
 % Ask the user for the mode (training, resume from checkpoints, or evaluate model)
-mode = input('Enter the mode (training, resume, evaluate): ', 's');
+mode = input('Enter the mode (gui, training, resume, evaluate): ', 's');
 
 %% Data Preparation
 % Load and preprocess data
@@ -36,7 +37,13 @@ checkpointFiles = dir(fullfile(checkpointDir, '*.mat')); % List all .mat files i
 modelDir = 'models';           % Directory containing model files
 modelFiles = dir(fullfile(modelDir, 'model_*.mat')); % List all .mat files in the model directory
 
-if strcmp(mode, 'resume') && ~isempty(checkpointFiles)
+if strcmp(mode, 'gui')
+    % Launch the GUI
+    disp('Launching the GUI...');
+    % Call the GUI function to create and display the GUI
+    createGui(dataVal);
+
+elseif strcmp(mode, 'resume') && ~isempty(checkpointFiles)
     % Load the latest checkpoint if resuming
     [~, idx] = max([checkpointFiles.datenum]); % Find the latest checkpoint file
     latestCheckpoint = fullfile(checkpointFiles(idx).folder, checkpointFiles(idx).name);
