@@ -61,6 +61,7 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
 
             % Perform prediction
             prediction = predict(model, img, lidar, pcd);
+            prediction = extractdata(prediction);
 
             % Assuming the model returns linear and angular velocities
             linearVelocity = prediction(1);
@@ -78,7 +79,7 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
             linVelGTLabel.Text = num2str(groundTruthLinVel);
             angVelGTLabel.Text = num2str(groundTruthAngVel);
 
-            pause(0.5);  % Adjust the pause duration as needed
+            pause(0.1);  % Adjust the pause duration as needed
         end
     end
 end
