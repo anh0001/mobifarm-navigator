@@ -44,7 +44,7 @@ if strcmp(mode, 'gui')
     load('models/model_1fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
 
     % Call the GUI function to create and display the GUI
-    createGui(dataVal);
+    createGui(model, dataVal);
 
 elseif strcmp(mode, 'resume') && ~isempty(checkpointFiles)
     % Load the latest checkpoint if resuming

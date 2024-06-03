@@ -1,4 +1,4 @@
-function createGui(dataVal)
+function createGui(model, dataVal)
     % Create the main figure
     fig = uifigure('Name', 'MobiFarm Navigator', 'Position', [100 100 800 600]);
 
@@ -12,28 +12,56 @@ function createGui(dataVal)
     uilabel(fig, 'Position', [400 400 100 30], 'Text', 'Angular Velocity:');
     angVelLabel = uilabel(fig, 'Position', [500 400 100 30], 'Text', '');
 
-    % Button for starting image display
+    % Button for starting image display and prediction
     btnStart = uibutton(fig, 'Position', [200 50 100 30], 'Text', 'Start', ...
-        'ButtonPushedFcn', @(btnStart,event) startImageDisplay(ax, linVelLabel, angVelLabel, dataVal));
+        'ButtonPushedFcn', @(btnStart,event) startImageDisplay(ax, linVelLabel, angVelLabel, model, dataVal));
 
     % Button for stopping image display
     btnStop = uibutton(fig, 'Position', [350 50 100 30], 'Text', 'Stop', ...
         'ButtonPushedFcn', @(btnStop,event) stopImageDisplay());
 end
 
-function startImageDisplay(ax, linVelLabel, angVelLabel, dataVal)
+function startImageDisplay(ax, linVelLabel, angVelLabel, model, dataVal)
     % Ensure the tools directory is on the path
-    addpath(genpath('tools'));
-
+    addpath(genpath('src'));   % Add source code directory
+    addpath(genpath('lib'));   % Add library directory
+    addpath(genpath('tools')); % Add tools directory
+    
     global stopFlag;
     stopFlag = false;
 
-    % Continuously display images until stopFlag is set to true
+    % Continuously display images and make predictions until stopFlag is set to true
     while ~stopFlag
         reset(dataVal); % Reset the datastore to the beginning
         while hasdata(dataVal) && ~stopFlag
-            img = read(dataVal);
-            imshow(img{1}, 'Parent', ax);
+            data = read(dataVal);
+            img = data{1};    % RGB image
+            lidar = data{2};  % Distance map (Lidar)
+            pcd = data{3};    % Point cloud data
+            
+            imshow(img, 'Parent', ax);
+
+            % Convert inputs to required formats
+            img = single(img);
+            lidar = single(lidar);
+            pcd = single(pcd);
+
+            % Convert to dlarray
+            img = dlarray(img, 'SSCB');
+            lidar = dlarray(lidar, 'SSCB');
+            pcd = dlarray(pcd, 'SCB');
+
+            % Perform prediction
+            prediction = predict(model, img, lidar, pcd);
+
+            % Assuming the model returns linear and angular velocities
+            linearVelocity = prediction(1);
+            angularVelocity = prediction(2);
+
+            % Update labels with predictions
+            linVelLabel.Text = num2str(linearVelocity);
+            angVelLabel.Text = num2str(angularVelocity);
+
             pause(0.5);  % Adjust the pause duration as needed
         end
     end
