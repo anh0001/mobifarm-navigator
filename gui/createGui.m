@@ -1,34 +1,47 @@
 function createGui(model, dataVal)
     % Create the main figure
-    fig = uifigure('Name', 'MobiFarm Navigator', 'Position', [100 100 800 600]);
+    fig = uifigure('Name', 'MobiFarm Navigator', 'Position', [100 100 640 800]);
 
     % Create axes for displaying images
-    ax = uiaxes(fig, 'Position', [50 200 300 300]);
-    
-    % Create labels for displaying predictions
-    uilabel(fig, 'Position', [400 450 100 30], 'Text', 'Linear Velocity:');
-    linVelLabel = uilabel(fig, 'Position', [500 450 100 30], 'Text', '');
+    ax = uiaxes(fig, 'Position', [20 300 640 480]); % Adjusted position to fit the width
+    ax.XTick = [];
+    ax.YTick = [];
+    ax.DataAspectRatio = [480 640 1]; % Set the aspect ratio for 640x480 resolution
 
-    uilabel(fig, 'Position', [400 400 100 30], 'Text', 'Angular Velocity:');
-    angVelLabel = uilabel(fig, 'Position', [500 400 100 30], 'Text', '');
+    % Center position calculation for the linear velocity gauge
+    centerX = 20 + (640 / 2); % Calculate the center X position of the image display
+    gaugeWidth = 400; % Width of the gauge
 
-    % Create labels for displaying ground truth
-    uilabel(fig, 'Position', [400 350 150 30], 'Text', 'Ground Truth Linear Velocity:');
-    linVelGTLabel = uilabel(fig, 'Position', [550 350 100 30], 'Text', '');
+    % Create gauge for displaying linear velocity
+    % uilabel(fig, 'Position', [centerX - (gaugeWidth / 2) - 75, 250, 150, 30], 'Text', 'Linear Velocity:');
+    linVelGauge = uigauge(fig, 'linear', 'Position', [20, 200, gaugeWidth, 50], 'Limits', [-1 1]);
+    linVelGauge.MajorTicks = [-1 -0.5 0 0.5 1];
 
-    uilabel(fig, 'Position', [400 300 150 30], 'Text', 'Ground Truth Angular Velocity:');
-    angVelGTLabel = uilabel(fig, 'Position', [550 300 100 30], 'Text', '');
+    % Create semicircular gauge for displaying angular velocity
+    % uilabel(fig, 'Position', [650 300 150 30], 'Text', 'Angular Velocity:');
+    angVelGauge = uigauge(fig, 'semicircular', 'Position', [425 200 200 200], 'Limits', [-1 1]);
+    angVelGauge.MajorTicks = [-1 -0.5 0 0.5 1];
+
+    % Create gauge for displaying ground truth linear velocity
+    % uilabel(fig, 'Position', [50 175 200 30], 'Text', 'GT Linear Velocity:');
+    linVelGTGauge = uigauge(fig, 'linear', 'Position', [20, 100, gaugeWidth, 50], 'Limits', [-1 1]);
+    linVelGTGauge.MajorTicks = [-1 -0.5 0 0.5 1];
+
+    % Create semicircular gauge for displaying ground truth angular velocity
+    % uilabel(fig, 'Position', [650 175 200 30], 'Text', 'GT Angular Velocity:');
+    angVelGTGauge = uigauge(fig, 'semicircular', 'Position', [425 100 200 200], 'Limits', [-1 1]);
+    angVelGTGauge.MajorTicks = [-1 -0.5 0 0.5 1];
 
     % Button for starting image display and prediction
     btnStart = uibutton(fig, 'Position', [200 50 100 30], 'Text', 'Start', ...
-        'ButtonPushedFcn', @(btnStart,event) startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGTLabel, model, dataVal));
+        'ButtonPushedFcn', @(btnStart,event) startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGTGauge, model, dataVal));
 
     % Button for stopping image display
     btnStop = uibutton(fig, 'Position', [350 50 100 30], 'Text', 'Stop', ...
         'ButtonPushedFcn', @(btnStop,event) stopImageDisplay());
 end
 
-function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGTLabel, model, dataVal)
+function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGTGauge, model, dataVal)
     % Ensure the tools directory is on the path
     addpath(genpath('src'));   % Add source code directory
     addpath(genpath('lib'));   % Add library directory
@@ -37,9 +50,11 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
     global stopFlag;
     stopFlag = false;
 
+    % Reset the datastore to the beginning
+    reset(dataVal);
+
     % Continuously display images and make predictions until stopFlag is set to true
     while ~stopFlag
-        reset(dataVal); % Reset the datastore to the beginning
         while hasdata(dataVal) && ~stopFlag
             data = read(dataVal);
             img = data{1};    % RGB image
@@ -48,6 +63,7 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
             groundTruth = data{4}; % Ground truth labels
             
             imshow(img, 'Parent', ax);
+            ax.DataAspectRatioMode = 'auto'; % Set aspect ratio mode to 'auto'
 
             % Convert inputs to required formats
             img = single(img);
@@ -62,6 +78,8 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
             % Perform prediction
             prediction = predict(model, img, lidar, pcd);
             prediction = extractdata(prediction);
+            disp('Predicted velocities:');
+            disp(prediction);
 
             % Assuming the model returns linear and angular velocities
             linearVelocity = prediction(1);
@@ -71,13 +89,13 @@ function startImageDisplay(ax, linVelLabel, angVelLabel, linVelGTLabel, angVelGT
             groundTruthLinVel = groundTruth(1);
             groundTruthAngVel = groundTruth(2);
 
-            % Update labels with predictions
-            linVelLabel.Text = num2str(linearVelocity);
-            angVelLabel.Text = num2str(angularVelocity);
+            % Update gauges with predictions
+            linVelGauge.Value = linearVelocity;
+            angVelGauge.Value = angularVelocity;
 
-            % Update labels with ground truth
-            linVelGTLabel.Text = num2str(groundTruthLinVel);
-            angVelGTLabel.Text = num2str(groundTruthAngVel);
+            % Update gauges with ground truth
+            linVelGTGauge.Value = groundTruthLinVel;
+            angVelGTGauge.Value = groundTruthAngVel * -1;
 
             pause(0.1);  % Adjust the pause duration as needed
         end
