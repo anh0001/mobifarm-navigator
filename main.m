@@ -41,10 +41,11 @@ if strcmp(mode, 'gui')
     % Launch the GUI
     disp('Launching the GUI...');
 
-    load('models/model_1fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
+    % load('models/model_1fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
+    load('models/model_2fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
 
     % Call the GUI function to create and display the GUI
-    createGui(model, dataVal);
+    createGui(model, dataTrain);
 
 elseif strcmp(mode, 'resume') && ~isempty(checkpointFiles)
     % Load the latest checkpoint if resuming
