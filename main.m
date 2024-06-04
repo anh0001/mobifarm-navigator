@@ -58,7 +58,8 @@ elseif strcmp(mode, 'training')
     % Build the model from scratch if training
     disp('Building the model...');
     % model = modelBuild_2fusion(); % Call function to build the model
-    model = modelBuild_1fusion(); % Call function to build the model
+    % model = modelBuild_1fusion(); % Call function to build the model
+    model = modelBuild_1fusion_lessdropout(); % Call function to build the model
     
     % Analyze the network
     disp('Analyzing the network...');
