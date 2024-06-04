@@ -6,22 +6,21 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
 
     disp('Configuring training options...');
     
-    %% Configure Training Options
-    % Set up the training options for the stochastic gradient descent with momentum (SGDM) optimizer
     options = trainingOptions('sgdm', ...
         'InitialLearnRate', 1e-2, ...  % Initial learning rate
         'Momentum', 0.9, ...  % Momentum value to accelerate gradients vectors
         'LearnRateSchedule', 'piecewise', ...  % Schedule for changing learning rate
-        'LearnRateDropPeriod', 100, ...  % Number of epochs after which learning rate drops
+        'LearnRateDropPeriod', 50, ...  % Number of epochs after which learning rate drops
         'LearnRateDropFactor', 0.1, ...  % Factor by which learning rate decreases
-        'MaxEpochs', 300, ...  % Maximum number of training epochs
+        'MaxEpochs', 150, ...  % Maximum number of training epochs
         'MiniBatchSize', 8, ...  % Number of samples per gradient update
         'ValidationData', dataVal, ...  % Validation data for monitoring training progress
         'ValidationFrequency', 50, ...  % Frequency of validation
         'Verbose', true, ...  % Display training progress information
         'Plots', 'training-progress', ...  % Plot training progress
         'ExecutionEnvironment', 'auto', ...  % Automatically select execution environment
-        'CheckpointPath', 'data/checkpoints');  % Path to save checkpoint data
+        'CheckpointPath', 'data/checkpoints', ...  % Path to save checkpoint data
+        'Shuffle', 'every-epoch');  % Shuffle the data every epoch
 
     %% Train the Model
     disp('Starting model training...');
