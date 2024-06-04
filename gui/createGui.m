@@ -89,7 +89,7 @@ function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGT
 
             % Update gauges with predictions
             linVelGauge.Value = linearVelocity;
-            angVelGauge.Value = angularVelocity;
+            angVelGauge.Value = angularVelocity * -1;
 
             % Update gauges with ground truth
             linVelGTGauge.Value = groundTruthLinVel;
