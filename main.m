@@ -58,21 +58,23 @@ elseif strcmp(mode, 'training')
     % Build the model from scratch if training
     disp('Building the model...');
     % model = modelBuild_2fusion(); % Call function to build the model
-    % model = modelBuild_1fusion(); % Call function to build the model
-    model = modelBuild_1fusion_lessdropout(); % Call function to build the model
+    model = modelBuild_1fusion(); % Call function to build the model
     
     % Analyze the network
     disp('Analyzing the network...');
     analyzeNetwork(model); % Call function to analyze the network
     
     % Define the layers to train
-    % layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'rgbd_conv1', 'rgbd_conv1', 'combine_fc1', 'combine_fc2'};  % Using 2 fusions model
-    layersToTrain = {'conv1', 'conv1_1', 'pc_pointnet', 'combine_conv1', 'combine_conv1', 'combine_fc1', 'combine_fc2'};  % Using 1 fusion model
+    firstLayersToTrain = {'conv1', 'conv1_1'};
+    layersToTrain = {'pc_pointnet', 'combine_conv1', 'combine_conv1', 'combine_fc1', 'combine_fc2'};
     
     % Freeze all layers by setting their learning rate multipliers to 0
     model = modifyLearningRates(model, {model.Layers.Name}, 0);
     
-    % Set the learning rate multipliers for the specified layers to 1 (or another value)
+    % Set the learning rate multipliers for the specified layers to 0.1
+    model = modifyLearningRates(model, firstLayersToTrain, 0.1);
+
+    % Set the learning rate multipliers for the specified layers to 1
     model = modifyLearningRates(model, layersToTrain, 1);
 end
 

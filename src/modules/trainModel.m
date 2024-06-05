@@ -19,8 +19,7 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
         'Verbose', true, ...  % Display training progress information
         'Plots', 'training-progress', ...  % Plot training progress
         'ExecutionEnvironment', 'auto', ...  % Automatically select execution environment
-        'CheckpointPath', 'data/checkpoints', ...  % Path to save checkpoint data
-        'Shuffle', 'every-epoch');  % Shuffle the data every epoch
+        'CheckpointPath', 'data/checkpoints');  % Path to save checkpoint data
 
     %% Train the Model
     disp('Starting model training...');

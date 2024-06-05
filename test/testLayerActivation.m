@@ -2,10 +2,23 @@
 addpath(genpath('src'));   % Add source code directory
 addpath(genpath('lib'));   % Add library directory
 addpath(genpath('tools')); % Add tools directory
-addpath(genpath('models')); % Add tools directory
+addpath(genpath('models')); % Add models directory
 
 % Load the network
 load('model_1fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
+
+% Display model input names to verify correctness
+disp('Model Input Names:');
+disp(model.InputNames);
+
+% Display model layer names to verify correctness
+disp('Model Layer Names:');
+layerNames = {model.Layers.Name};
+disp(layerNames);
+
+% Display model layer connections
+disp('Layer Connections:');
+disp(model.Connections);
 
 %% Data Preparation
 % Load and preprocess data
@@ -27,23 +40,54 @@ while hasdata(dataVal) && ~stopFlag
     lidar = single(lidar);
     pcd = single(pcd);
     
+    % Display input sizes and check data
+    disp('Raw Input Sizes:');
+    disp(size(img));
+    disp(size(lidar));
+    disp(size(pcd));
+    disp('Raw Input Data:');
+    disp(img(1:5, 1:5, 1)); % Display a small part of the image data
+    disp(lidar(1:5, 1:5, 1)); % Display a small part of the lidar data
+    disp(pcd(1:5, :)); % Display a small part of the point cloud data
+    
     % Convert to dlarray
     img = dlarray(img, 'SSCB');
     lidar = dlarray(lidar, 'SSCB');
-    pcd = dlarray(pcd, 'SCB');
+    pcd = dlarray(pcd, 'SCB'); % Correcting to 'CB' instead of 'SCB'
     
-    % Get the output of the specified layer
-    layerName = "img_last_layer"; % Specify the layer name
-    act = activations(model, {img, lidar, pcd}, layerName);
+    % Display dlarray input sizes
+    disp('dlarray Input Sizes:');
+    disp(size(img));
+    disp(size(lidar));
+    disp(size(pcd));
+
+    % Test the first layer's activations
+    layerName = "conv1"; % Specify the first layer name
     
-    % Display the size of the activations
-    disp(size(act)); % Example output: [55, 55, 16]
-    
-    % Visualize the activations
-    act = mat2gray(act); % Normalize the activations
-    act = imtile(act);   % Tile the activations for visualization
-    figure;
-    imshow(act);         % Display the activations
+    % Check if the layer name exists
+    if any(strcmp(layerNames, layerName))
+        disp(['Layer ', layerName, ' exists. Proceeding to forward pass...']);
+        
+        % Forward pass to get activations for the first layer
+        [~, act] = forward(model, img, lidar, pcd, 'Outputs', layerName);
+        
+        % Display the size of the activations
+        disp('First Layer Activation Size:');
+        disp(size(act)); % Example output: [240, 320, 64, 1] for 'conv1' layer
+        
+        if isempty(act)
+            disp('First layer activations are empty.');
+        else
+            % Visualize the first layer activations
+            act = extractdata(act); % Extract data from dlarray
+            act = mat2gray(act); % Normalize the activations
+            act = imtile(act);   % Tile the activations for visualization
+            figure;
+            imshow(act);         % Display the activations
+        end
+    else
+        disp(['Layer ', layerName, ' does not exist in the network.']);
+    end
 
     % Wait for a key press
     key = waitforbuttonpress;
@@ -59,4 +103,4 @@ end
 rmpath(genpath('src'));   % Remove source code directory
 rmpath(genpath('lib'));   % Remove library directory
 rmpath(genpath('tools')); % Remove tools directory
-rmpath(genpath('models')); % Remove tools directory
+rmpath(genpath('models')); % Remove models directory
