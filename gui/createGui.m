@@ -94,6 +94,7 @@ function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGT
             % Update gauges with ground truth
             linVelGTGauge.Value = groundTruthLinVel;
             angVelGTGauge.Value = groundTruthAngVel * -1;
+            % angVelGTGauge.Value = groundTruthAngVel * -1 + (rand(1) - 0.5) * 0.1;
 
             pause(0.1);  % Adjust the pause duration as needed
         end
