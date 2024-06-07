@@ -41,7 +41,7 @@ if strcmp(mode, 'gui')
     % Launch the GUI
     disp('Launching the GUI...');
 
-    load('models/model_1fusion_lr1e-02_bs08_data_cave_house_city.mat', 'model'); % Load the model
+    load('models/model_1fusion_lr1e-03_bs16_data_cave_house_city.mat', 'model'); % Load the model
 
     % Call the GUI function to create and display the GUI
     createGui(model, dataTest);
@@ -65,14 +65,14 @@ elseif strcmp(mode, 'training')
     analyzeNetwork(model); % Call function to analyze the network
     
     % Define the layers to train
-    firstLayersToTrain = {'conv1', 'conv1_1'};
+    firstLayersToTrain = {'conv1', 'conv1_1'};  % Train the first pretrained layers to adjust to the new input size
     layersToTrain = {'pc_pointnet', 'combine_conv1', 'combine_conv1', 'combine_fc1', 'combine_fc2'};
     
     % Freeze all layers by setting their learning rate multipliers to 0
     model = modifyLearningRates(model, {model.Layers.Name}, 0);
     
-    % Set the learning rate multipliers for the specified layers to 0.1
-    model = modifyLearningRates(model, firstLayersToTrain, 0.1);
+    % Set the learning rate multipliers for the specified layers to the desired value
+    model = modifyLearningRates(model, firstLayersToTrain, 1);
 
     % Set the learning rate multipliers for the specified layers to 1
     model = modifyLearningRates(model, layersToTrain, 1);

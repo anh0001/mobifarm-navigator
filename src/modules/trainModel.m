@@ -7,15 +7,15 @@ function [trainedModel, trainInfo] = trainModel(model, dataTrain, dataVal)
     disp('Configuring training options...');
     
     options = trainingOptions('sgdm', ...
-        'InitialLearnRate', 1e-2, ...  % Initial learning rate
+        'InitialLearnRate', 1e-3, ...  % Initial learning rate
         'Momentum', 0.9, ...  % Momentum value to accelerate gradients vectors
         'LearnRateSchedule', 'piecewise', ...  % Schedule for changing learning rate
         'LearnRateDropPeriod', 50, ...  % Number of epochs after which learning rate drops
         'LearnRateDropFactor', 0.1, ...  % Factor by which learning rate decreases
         'MaxEpochs', 150, ...  % Maximum number of training epochs
-        'MiniBatchSize', 8, ...  % Number of samples per gradient update
+        'MiniBatchSize', 16, ...  % Number of samples per gradient update
         'ValidationData', dataVal, ...  % Validation data for monitoring training progress
-        'ValidationFrequency', 50, ...  % Frequency of validation
+        'ValidationFrequency', 30, ...  % Frequency of validation
         'Verbose', true, ...  % Display training progress information
         'Plots', 'training-progress', ...  % Plot training progress
         'ExecutionEnvironment', 'auto', ...  % Automatically select execution environment

@@ -13,7 +13,7 @@ function createGui(model, dataVal)
     gaugeWidth = 400; % Width of the gauge
 
     % Create gauge for displaying linear velocity
-    % uilabel(fig, 'Position', [centerX - (gaugeWidth / 2) - 75, 250, 150, 30], 'Text', 'Linear Velocity:');
+    uilabel(fig, 'Position', [centerX - (gaugeWidth / 2) - 75, 250, 150, 30], 'Text', 'Predicted Velocity:');
     linVelGauge = uigauge(fig, 'linear', 'Position', [20, 200, gaugeWidth, 50], 'Limits', [-1 1]);
     linVelGauge.MajorTicks = [-1 -0.5 0 0.5 1];
 
@@ -23,7 +23,7 @@ function createGui(model, dataVal)
     angVelGauge.MajorTicks = [-1 -0.5 0 0.5 1];
 
     % Create gauge for displaying ground truth linear velocity
-    % uilabel(fig, 'Position', [50 175 200 30], 'Text', 'GT Linear Velocity:');
+    uilabel(fig, 'Position', [centerX - (gaugeWidth / 2) - 75, 150, 150, 30], 'Text', 'GT Velocity:');
     linVelGTGauge = uigauge(fig, 'linear', 'Position', [20, 100, gaugeWidth, 50], 'Limits', [-1 1]);
     linVelGTGauge.MajorTicks = [-1 -0.5 0 0.5 1];
 
