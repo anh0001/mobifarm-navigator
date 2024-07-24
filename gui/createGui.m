@@ -39,9 +39,23 @@ function createGui(model, dataVal)
     % Button for stopping image display
     btnStop = uibutton(fig, 'Position', [350 50 100 30], 'Text', 'Stop', ...
         'ButtonPushedFcn', @(btnStop,event) stopImageDisplay());
+
+    % Create a new figure for the trajectory plot
+    trajFig = figure('Name', 'Velocity Trajectory', 'Position', [750 100 500 500]);
+    trajAx = axes(trajFig);
+    hold(trajAx, 'on');
+    xlabel(trajAx, 'X Position');
+    ylabel(trajAx, 'Y Position');
+    title(trajAx, 'Robot Trajectory');
+    legend(trajAx, 'Predicted', 'Ground Truth', 'Location', 'best');
+
+    % Button for starting image display and prediction
+    btnStart = uibutton(fig, 'Position', [200 50 100 30], 'Text', 'Start', ...
+        'ButtonPushedFcn', @(btnStart,event) startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGTGauge, model, dataVal, trajAx));
+
 end
 
-function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGTGauge, model, dataVal)
+function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGTGauge, model, dataVal, trajAx)
     % Ensure the tools directory is on the path
     addpath(genpath('src'));   % Add source code directory
     addpath(genpath('lib'));   % Add library directory
@@ -49,6 +63,23 @@ function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGT
     
     global stopFlag;
     stopFlag = false;
+
+    % Initialize variables for predicted trajectory
+    x_pred = 0;
+    y_pred = 0;
+    theta_pred = 0;
+
+    % Initialize variables for ground truth trajectory
+    x_gt = 0;
+    y_gt = 0;
+    theta_gt = 0;
+
+    dt = 0.1; % Time step, adjust as needed
+
+    % Create plot handles
+    predHandle = plot(trajAx, x_pred, y_pred, 'b-', 'LineWidth', 2);
+    gtHandle = plot(trajAx, x_gt, y_gt, 'r-', 'LineWidth', 2);
+    legend(trajAx, [predHandle, gtHandle], {'Predicted', 'Ground Truth'}, 'Location', 'best');
 
     % Reset the datastore to the beginning
     reset(dataVal);
@@ -96,7 +127,25 @@ function startImageDisplay(ax, linVelGauge, angVelGauge, linVelGTGauge, angVelGT
             angVelGTGauge.Value = groundTruthAngVel * -1;
             % angVelGTGauge.Value = groundTruthAngVel * -1 + (rand(1) - 0.5) * 0.1;
 
-            pause(0.1);  % Adjust the pause duration as needed
+            % Update predicted trajectory
+            x_pred = x_pred + linearVelocity * dt * cos(theta_pred);
+            y_pred = y_pred + linearVelocity * dt * sin(theta_pred);
+            theta_pred = theta_pred + angularVelocity * dt;
+
+            % Update ground truth trajectory
+            x_gt = x_gt + groundTruthLinVel * dt * cos(theta_gt);
+            y_gt = y_gt + groundTruthLinVel * dt * sin(theta_gt);
+            theta_gt = theta_gt + groundTruthAngVel * dt;
+
+            % Update plot data
+            predHandle.XData = [predHandle.XData, x_pred];
+            predHandle.YData = [predHandle.YData, y_pred];
+            gtHandle.XData = [gtHandle.XData, x_gt];
+            gtHandle.YData = [gtHandle.YData, y_gt];
+
+            drawnow;
+
+            pause(dt);  % Adjust the pause duration as needed
         end
     end
 end
