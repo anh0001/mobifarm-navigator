@@ -1,16 +1,21 @@
 % Existing code
 close all
-% Load trainInfo.mat
+% load('trainInfo.mat')
 
-% Plot the training and validation loss
+% Interpolate the validation loss to match the training iterations
+trainingIterations = length(trainInfo.TrainingHistory.Loss);
+validationIterations = length(trainInfo.ValidationHistory.Loss);
+validationLossInterpolated = interp1(linspace(1, trainingIterations, validationIterations), trainInfo.ValidationHistory.Loss, 1:trainingIterations, 'linear');
+
+% Plot the training and interpolated validation loss
 figure,
 plot(trainInfo.TrainingHistory.Loss, 'b-', 'LineWidth', 2);
 hold on;
-plot(trainInfo.ValidationHistory.Loss, 'r--', 'LineWidth', 2);
+plot(validationLossInterpolated, 'r-', 'LineWidth', 2);
 hold off;
 
 % Set x-axis range
-xlim([20, 150]);
+xlim([0, 250]);
 % ylim([0, 1]);
 
 grid on;

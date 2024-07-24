@@ -2,6 +2,8 @@
 # included in your git repository. It is a good idea to add this to your
 # .gitignore file in your repository.
 
+*.mov
+
 # MATLAB autosave files
 # These are created when MATLAB crashes, and are usually deleted when MATLAB
 # exits properly. However, sometimes they are not deleted and can be ignored.
